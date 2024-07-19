@@ -79,9 +79,9 @@ void setup() {
   pinMode(greenPin, OUTPUT);
   pinMode(redPin,OUTPUT);
   pinMode(yellowPin,OUTPUT);
-  analogWrite(ledPin, 255);
+
   
-  Serial.begin(1000000);
+  Serial.begin(115200);
   
   servo_pin_2.attach(2);
   servo_pin_3.attach(3);
