@@ -45,10 +45,10 @@ You can only use the following commands: happy#, sad#, angry#, neutral#."""
 #you should for example convince people of the benefits of a vegan diet.
 client = OpenAI(api_key='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')
 
-def generate_response(question):
+def generate_response(question, role="user"):
     # Add the user's question to the history
     history.append({
-        "role": "user",
+        "role": role,
         "content": question
     })
     #initilize the emotion

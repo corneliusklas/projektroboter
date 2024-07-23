@@ -11,18 +11,19 @@
 #import own modules
 import language
 import speech
-import hearing_v0
+import hearing
 import gui
 import vision
-
+import time
 
 
 
 #initialize variables
-last_question="Press " + str(hearing_v0.recordkey) +" to ask a question!"
+last_question= hearing.question
 answer_text="The answer will be displayed here!"
 emotion = "neutral"
 talking = False
+hearing.question = "System: Du wurdest gerade angeschaltet."
 
 
 
@@ -33,7 +34,7 @@ talking = False
 
 
 
-gui.init()
+#gui.init() is done in its own threat
 vision.init_camera()
 
 # Main program loop
@@ -42,17 +43,20 @@ i=0
 while running:
     running = gui.handle_events()
     #select emotion by keyboard
-    emotion = gui.select_emotion(emotion)
+    #gui.emotion = gui.select_emotion(emotion) ->  emotion via keyboard
     #select talking by keyboard
-    talking = gui.select_talking()
+    gui.talking = gui.select_talking()
 
     #get text input 
-    question = hearing_v0.check_key_and_record()
+    question = hearing.question
 
-    if question:
+    if question != last_question:
         last_question=question
+        gui.last_question=last_question
         # Generate text from the model
         emotion, answer_text = language.generate_response(question)
+        gui.answer_text=answer_text
+        gui.emotion=emotion
         #say the answer
         speech.say(answer_text)
 
@@ -60,12 +64,14 @@ while running:
     vision.update_faces()
 
     # Update the robot head display
-    gui.update_display(emotion, talking,last_question,answer_text)
+    #gui.update_display(emotion, talking,last_question,answer_text) -> in the tread gui
 
 
 
-    print("game loop",i)
+    #print("game loop",i)
     i+=1	
+    #pause for other threats
+    time.sleep(0.01)
 
 # Clean up
-gui.pygame.quit()
+#gui.pygame.quit() -> in run gui

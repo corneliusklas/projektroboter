@@ -7,6 +7,10 @@ import queue
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
+import time
+
+global RECORDING
+RECORDING = False
 
 # Get the API key
 api_key = os.getenv('API_KEY')
@@ -17,8 +21,19 @@ print("API key",api_key)
 recordkey = "enter"
 audio_filename = "audio.wav"
 fs = 44100  # Sample rate for audio recording
-buffer_duration = 1  # Duration of the buffer in seconds
-audio_buffer = queue.Queue(maxsize=fs * buffer_duration * 2)  # Buffer to hold 1 second of audio
+channels = 1  # Number of audio channels	
+blocksize=1024
+#prerecord lenth in ms
+prerecord=500
+#prerecord block lenth
+prerecord_block=int((fs / 1000 * prerecord) / blocksize)
+print("prerecord block",prerecord_block)
+
+audio_buffer = queue.Queue() #maxsize= int(fs * buffer_duration))  # Buffer to hold n seconds of audio buffer_duration = .5  # Duration of the buffer in seconds
+
+global question
+last_question = "Press " + recordkey + " to ask a question!"
+question = last_question
 
 def audio_callback(indata, frames, time, status):
     """Callback function for the audio stream."""
@@ -26,23 +41,32 @@ def audio_callback(indata, frames, time, status):
         audio_buffer.put(indata.copy())
 
 def continuous_recording():
+    global RECORDING
     """Continuously record audio into the buffer."""
-    with sd.InputStream(callback=audio_callback, channels=1, samplerate=fs):
+    with sd.InputStream(callback=audio_callback, channels=channels, samplerate=fs, blocksize=blocksize):
+
         while True:
-            sd.sleep(1000)
+            if keyboard.is_pressed(recordkey):
+                RECORDING = True
+                print('Recording...')
+                sd.sleep(1000)  # Record for 1 second after key press
+            else:
+                if RECORDING:
+                    print('Stopped recording.')
+                    RECORDING = False
+                    save_audio(audio_filename)
+                    global question
+                    question = transcribe_audio(audio_filename)
+                else:
+                    # Remove the oldest data from the buffer
+                    while not audio_buffer.qsize() < prerecord_block:
+                        audio_buffer.get()  # Remove the oldest data from the buffer
+                    sd.sleep(int(500)) #record also a bit of sound before the key is pressed. Otherwise the first word is cut off, because it takes a bit of time to start the recording
 
-# Start continuous recording in a separate thread
-recording_thread = threading.Thread(target=continuous_recording, daemon=True)
-recording_thread.start()
 
-def record_audio_while_key_pressed(filename):
-    print("Press and hold the 'Enter' key to start recording...")
-    while True:
-        if keyboard.is_pressed('enter'):
-            print('Recording...')
-            sd.sleep(1000)  # Record for 1 second after key press
-            break
+print("Press and hold the " + recordkey +" key to start recording...")
 
+def save_audio(audio_filename):
     # Extract audio from the buffer
     buffer_content = []
     while not audio_buffer.empty():
@@ -50,8 +74,8 @@ def record_audio_while_key_pressed(filename):
     recording = np.concatenate(buffer_content, axis=0)
 
     # Save the recorded audio
-    wavio.write(filename, recording, fs, sampwidth=2)
-    print("Audio recorded and saved as", filename)
+    wavio.write(audio_filename, recording, fs, sampwidth=2)
+    print("Audio recorded and saved as", audio_filename)
 
     
 # Transcribe audio using Whisper ASR API
@@ -74,7 +98,6 @@ def transcribe_audio(filename,lan="de"):
     #    #output the error as speeech
     #    return error
     
-
 def get_mic_index_by_name(mic_name):
     """
     Sucht nach einem Mikrofon mit dem gegebenen Namen und gibt dessen Index zurück.
@@ -92,19 +115,29 @@ def print_default_input_device_info():
     # Ausgabe des Namens des Standard-Eingabegeräts
     print("Standard-Eingabegerät:", default_device_info['name'])
 
-def check_key_and_record():
-    if keyboard.is_pressed(recordkey):
-        record_audio_while_key_pressed(audio_filename)
-        question = transcribe_audio(audio_filename)
-        return question
-    else:
-        pass  # This could be a place to handle continuous buffer update if needed
+
+
+# Start continuous recording in a separate thread
+recording_thread = threading.Thread(target=continuous_recording, daemon=True)
+recording_thread.start()
+
 
 if __name__ == "__main__":
     print_default_input_device_info()
     running = True
     while running:
-        question = check_key_and_record()
-        if question:
+        if last_question != question:
             last_question = question
             print(last_question)
+        if keyboard.is_pressed('esc'):
+            running = False
+        #pause the loop for a short time
+        time.sleep(0.01)
+
+
+
+
+
+
+
+        

@@ -1,5 +1,6 @@
 import pygame
-
+import threading
+import time
 #constants
 sizex = 1024#1920 #
 sizey = 600#1080 #
@@ -22,6 +23,11 @@ eye_radius_y=0.07 #relative to the screen size
 eye_x=0.0
 eye_y=-0
 
+global emotion, talking,last_question,answer_text
+emotion = "neutral"
+talking = False
+last_question= "test"
+answer_text= "test"
 
 #init function
 def init():
@@ -66,6 +72,7 @@ def init():
 
 def select_emotion(emotion):
     pressed = pygame.key.get_pressed()
+    #print(pressed)
     if pressed[pygame.K_1]:
         return "angry"
     elif pressed[pygame.K_2]:
@@ -95,8 +102,9 @@ def handle_events():
     return True
 
 
-def update_display(emotion, talking,last_question,answer_text):
+def update_display():#emotion, talking,last_question,answer_text):
     global screen, emotion_to_face, faceImages, sizex, sizey, eye_radius, eye_x, eye_y 
+    global emotion, talking,last_question,answer_text
 
     # Get the face for the selected emotion
     face = emotion_to_face.get(emotion, faceImages[3])  # Default to neutral face if emotion is not recognized
@@ -130,13 +138,29 @@ def update_display(emotion, talking,last_question,answer_text):
     # Update the display
     pygame.display.flip()
 
+
+def run_gui():
+    running = True
+    while running:
+        running = handle_events()
+        update_display()
+        #time.sleep(0.01)
+    pygame.quit()
+
+
+init()
+# Create a thread to run the GUI
+gui_thread = threading.Thread(target=run_gui,daemon=True)
+
+# Start the GUI thread
+gui_thread.start()
+
 #start main loop if main
 if __name__ == "__main__":
-    init()
+    #init()
     #main loop
     running = True
-    emotion = "neutral"
-    talking = False
+
     while running:
         running = handle_events()
         #select emotion by keyboard
@@ -144,7 +168,9 @@ if __name__ == "__main__":
         #select talking by keyboard
         talking = select_talking()
         #update the display
-        update_display(emotion, talking,"test","test")
+        #update_display()#emotion, talking,"test","test")
+        #pause for other threats
+        time.sleep(0.01)
     # Clean up
-    pygame.quit()
+    #pygame.quit() in run gui
     
