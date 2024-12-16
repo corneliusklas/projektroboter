@@ -1,0 +1,158 @@
+<mujoco>
+
+<default>
+    <geom density="1000"/>
+</default>
+
+<!--<option gravity="0 0 0"/>-->
+<!--<option integrator="RK4" timestep="0.0001"/>-->
+<!--<option integrator="Euler" timestep="0.01"/>-->
+
+<compiler angle="radian" meshdir="." autolimits="true"/>
+
+  <!-- import our stl files -->
+  <asset>
+      <mesh file="base0.stl" scale="0.001 0.001 0.001"/>
+      <mesh file="wristbase.stl" scale="0.001 0.001 0.001"/>
+      <mesh file="motor1.stl" scale="0.001 0.001 0.001"/>
+      <mesh file="spindle1.stl" scale="0.001 0.001 0.001"/>
+      <mesh file="motor2.stl" scale="0.001 0.001 0.001"/>
+      <mesh file="spindle2.stl" scale="0.001 0.001 0.001"/>
+      <mesh file="lever1.stl" scale="0.001 0.001 0.001"/>
+      <mesh file="winkel.stl" scale="0.001 0.001 0.001"/>
+      <mesh file="lever_m.stl" scale="0.001 0.001 0.001"/>
+      <mesh file="base2_met.stl" scale="0.001 0.001 0.001"/>
+      <mesh file="base2.stl" scale="0.001 0.001 0.001"/>
+      <mesh file="cover.stl" scale="0.001 0.001 0.001"/>
+
+      
+  </asset>
+
+
+  <worldbody>
+    <!-- set up a light pointing down on the robot -->
+    <light directional="true" pos="-0.5 0.5 3" dir="0 0 -1" />
+    <!--<geom name="red_box" type="box" size=".2 .2 .2" rgba="1 0 0 1"/> -->
+    <!--<geom name="green_sphere" pos=".2 .2 .2" size=".1" rgba="0 1 0 1"/> -->
+    <!-- add a floor so we don't stare off into the abyss -->
+    <geom name="floor" pos="0 0 -1" size="1 1 1" type="plane" rgba="1 0.83 0.61 0.5"/>
+
+    <!--rotate 90° around x quat="0.707 0 0 0.707"-->
+    <body name="base" pos="0 0 0">
+      <!-- no collision: contype="0" conaffinity="0" -->
+      <geom name="base" type="mesh" mesh="base0" rgba="1 1 1 1" contype="0" conaffinity="0"/>
+      <geom name="wristbase" type="mesh" mesh="wristbase" rgba="1 1 1 1" contype="0" conaffinity="0"/>
+      <geom name="cover" type="mesh" mesh="cover" rgba="1 1 1 .1" contype="0" conaffinity="0"/>
+      <!--<inertial pos="0 0 0" mass="0.001" diaginertia="1 1 1"/>-->
+
+      <body name="lever1" pos="0 0 0" >
+          <joint name="lever1" axis="1 1 0" damping="0.05" pos="0 0 -.022"/>
+          <geom name="lever1" type="mesh" mesh="lever1" rgba=".5 .5 .5 1" contype="0" conaffinity="0"/>
+          <site name="ball1l" pos="-0.0332616 0.0211827 -0.0211499" size="0.01" rgba="1 0 0 1"/>
+
+          <body name="winkel1" >
+            <joint name="winkel1" axis="-0.640856 0.640856 0.422618" pos="-0.0250205 0.0250205 -0.00550000" damping="0.05"/>
+            <geom name="winkel1" type="mesh" mesh="winkel" rgba=".8 .8 .8 1" contype="0" conaffinity="0"/>
+
+              <body name="lever_m1" pos="0 0 0">
+                <joint name="lever_m1" axis="-0.640856 0.640856 -0.422618" pos="-0.0250205 0.0250205 0.00400000" damping="0.05"/>
+                <geom name="lever_m1" type="mesh" mesh="lever_m" rgba=".5 .5 .5 1" contype="0" conaffinity="0"/>
+                            
+                <body name="base2_met1" pos="0 0 0">
+                  <joint name="base2_met1" axis="0.707106	0.707107 0" pos="0.0197283 0.0197283 0.0205000" damping="0.05"/>
+                  <geom name="base2_met1" type="mesh" mesh="base2_met" rgba=".8 .8 .8 1" contype="0" conaffinity="0"/>
+
+                  <body name="base2" pos="0 0 0">
+                    <!-- no collision: contype="0" conaffinity="0" -->
+                    <geom name="base2" type="mesh" mesh="base2" rgba="1 1 1 1" contype="0" conaffinity="0"/>
+                  </body>
+                </body>
+              </body>
+
+          </body>
+      </body>
+
+      <body name="lever2" pos="0 0 0" euler="0 0 1.5708">
+          <joint name="lever2" axis="1 1 0" damping="0.05" pos="0 0 -.022"/>
+          <geom name="lever2" type="mesh" mesh="lever1" rgba=".5 .5 .5 1" contype="0" conaffinity="0"/>
+          <site name="ball2l" pos=" -0.0211827 0.0332616 -0.0211499" size="0.01" rgba="1 0 0 1"/>
+          <body name="winkel2" >
+            <joint name="winkel2" axis="-0.640856 0.640856 0.422618" pos="-0.0250205 0.0250205 -0.00550000" damping="0.05"/>
+            <geom name="winkel2" type="mesh" mesh="winkel" rgba=".8 .8 .8 1" contype="0" conaffinity="0"/>
+              <body name="lever_m2" pos="0 0 0">
+                <joint name="lever_m2" axis="-0.640856 0.640856 -0.422618" pos="-0.0250205 0.0250205 0.00400000" damping="0.05"/>
+                <geom name="lever_m2" type="mesh" mesh="lever_m" rgba=".5 .5 .5 1" contype="0" conaffinity="0"/>      
+                <body name="base2_met2" pos="0 0 0">
+                  <joint name="base2_met2" axis="0.707106	0.707107 0" pos="0.0197283 0.0197283 0.0205000" damping="0.05"/>
+                  <geom name="base2_met2" type="mesh" mesh="base2_met" rgba=".8 .8 .8 1" contype="0" conaffinity="0"/>
+                </body>
+              </body>
+          </body>
+      </body>
+
+      
+      <body name="motor1" pos="0 0 0" >
+        <joint name="motor1" axis="1 1 0" damping="0.05" pos="-.042 .00306 -0.1175"/>
+        <geom name="gmotor1" type="mesh" mesh="motor1" rgba=".1 .1 1 1" contype="0" conaffinity="0"/>
+
+
+        <body name="spindle1" pos="0 0 0">
+          <joint name="spindle1" type="slide" damping="1" axis="-0.04852	0.04852	0.997643"  pos="0 0 0"/>
+          <geom name="gspindle1" type="mesh" mesh="spindle1" rgba=".1 1 .1 1" contype="0" conaffinity="0" />
+          <site name="ball1s" pos="-0.0332616 0.0211827 -0.0211499" size="0.01" rgba="1 0 0 1"/>
+
+        </body>
+
+      </body>
+
+      <body name="motor2" pos="0 0 0" >
+        <joint name="motor2" axis="1 -1 0" damping="0.05" pos="-0.042 -0.00306 -0.117500"/>
+        <geom name="gmotor2" type="mesh" mesh="motor2" rgba="1 .1 1 1" contype="0" conaffinity="0"/>
+
+
+          <body name="spindle2" pos="0 0 0">
+            <joint name="spindle2" type="slide" damping="1" axis="-0.04852	-0.04852	0.997643"  pos="0 0 0"/>
+            <geom name="gspindle2" type="mesh" mesh="spindle2" rgba=".1 1 .1 1" contype="0" conaffinity="0" />
+            <site name="ball2s" pos="-0.0332616 -0.0211827 -0.0211499" size="0.01" rgba="1 0 0 1"/>
+
+          </body>
+
+      </body>
+
+    
+    </body>
+
+
+    
+
+  </worldbody>
+
+  <!-- add constrains to make joint axis move together -->
+  <equality>
+    <joint joint1="winkel1" joint2="lever_m1" polycoef="0 1 0 0 0" solref="0.002 1" solimp="0.8 0.8 0.01"/>
+    <joint joint1="winkel2" joint2="lever_m2" polycoef="0 1 0 0 0" solref="0.002 1" solimp="0.8 0.8 0.01"/>
+    <!-- https://mujoco.readthedocs.io/en/latest/modeling.html -->
+    <connect body1="spindle1" body2="lever1" anchor="-0.0332616 0.0211827 -0.0211499" solref="0.0002 .35" solimp="0.8 0.8 0.01"/>-->
+    <connect body1="spindle2" body2="lever2" anchor="-0.0332616 -0.0211827 -0.0211499" solref="0.0002 .35" solimp="0.8 0.8 0.01"/>-->
+
+    <weld body1="base2" body2="base2_met2"  solref="0.0004 .08" solimp="0.8 0.8 0.01"/>
+
+  </equality> 
+
+
+
+
+
+  <actuator>
+    <!--<position name="motor1" joint="motor1" ctrlrange="-1 1" kp="100"/>-->
+    <!--<position name="motor2" joint="motor2" ctrlrange="-1 1" kp="100"/>-->
+    <!--<position name="lever1" joint="lever1" ctrlrange="-1 1" kp="10"/>-->
+    <!--<position name="lever2" joint="lever2" ctrlrange="-1 1" kp="10"/>-->
+    <!--<position name="winkel1" joint="winkel1" ctrlrange="-1 1" kp="100"/>-->
+    <!--<position name="lever_m1" joint="lever_m1" ctrlrange="-1 1" kp="100"/>-->
+    <position name="spindle1" joint="spindle1" ctrlrange="-.027 .027" kp="1000"/>
+    <position name="spindle2" joint="spindle2" ctrlrange="-.027 .027" kp="1000"/>
+  </actuator>
+
+</mujoco>
+

@@ -11,6 +11,7 @@ import time
 
 global RECORDING
 RECORDING = False
+lan="de"
 
 # Get the API key
 api_key = os.getenv('API_KEY')
@@ -77,19 +78,48 @@ def save_audio(audio_filename):
     wavio.write(audio_filename, recording, fs, sampwidth=2)
     print("Audio recorded and saved as", audio_filename)
 
-    
+
+
+def analyze_audio(file_path):
+    from pydub import AudioSegment
+    from pydub.silence import detect_nonsilent
+    # Lade die Audiodatei
+    audio = AudioSegment.from_wav(file_path)
+
+    # Erkenne die Zeitstempel der nicht stillen Abschnitte (Stille ist < -40 dBFS)
+    non_silent_ranges = detect_nonsilent(audio, min_silence_len=1000, silence_thresh=-40)
+
+    # Überprüfung der Ergebnisse
+    #if len(non_silent_ranges) == 0:
+    #    print("Die Audiodatei enthält nur Stille.")
+    #else:
+    #    print(f"Die Audiodatei enthält {len(non_silent_ranges)} nicht stille Abschnitte.")
+    return len(non_silent_ranges)
+
+
+
 # Transcribe audio using Whisper ASR API
-def transcribe_audio(filename,lan="de"):
+def transcribe_audio(filename):
+    global lan
     print("Transcribing audio...")
+
+    # Beispielaufruf der Funktion
+    non_silent=analyze_audio(filename)
+
+    if non_silent == 0:
+        return "~" #"No audio detected"
+    
+    # Öffnen der Audiodatei
     audio_file= open(filename, "rb")
     #check for errors 
     #try:
     transcript = client.audio.transcriptions.create(
         model="whisper-1", 
         file=audio_file,
+       
         language=lan
     )
-    return transcript.text
+    return transcript.text # " non_silent: " + str(non_silent)
     #except:
     #    #get a text for the spececific error
     #    error = str(sys.exc_info()[1])

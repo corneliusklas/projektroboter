@@ -3,11 +3,12 @@ import os
 #https://espeak.sourceforge.net/commands.html, file: -w speech.wav
 speed = 175 #words per minute
 talking=False
+lan="de"
 
 def say(text):
     print("Talking.")
     talking=True
-    command = 'cmd /c "eSpeak\command_line\espeak -p 30 -v de-m2 -s ' + str(speed)+' "'+text+'""'
+    command = 'cmd /c "eSpeak\command_line\espeak -p 30 -v '+lan+'-m2 -s ' + str(speed)+' "'+text+'""'
     print("command: ", command)
     os.system(command )
 
