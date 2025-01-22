@@ -14,10 +14,13 @@ RECORDING = False
 lan="de"
 
 # Get the API key
+import loadapikey
+loadapikey.api_key
+
 api_key = os.getenv('API_KEY')
 # Initialize the OpenAI client with the loaded API key
 client = OpenAI(api_key=api_key)
-print("API key",api_key)
+
 
 recordkey = "enter"
 audio_filename = "audio.wav"
