@@ -12,17 +12,20 @@
 import language
 import speech
 import hearing
-import gui
-import vision
+import gui_face
+import threading
 import time
 
 
+VISION = False
+
+if VISION:
+    import vision
 
 #initialize variables
 last_question= hearing.question
 answer_text="The answer will be displayed here!"
 emotion = "neutral"
-talking = False
 hearing.question = "System: Du wurdest gerade angeschaltet."
 
 
@@ -35,43 +38,49 @@ hearing.question = "System: Du wurdest gerade angeschaltet."
 
 
 #gui.init() is done in its own threat
-vision.init_camera()
+if VISION:
+    vision.init_camera()
 
-# Main program loop
-running = True
-i=0
-while running:
-    running = gui.handle_events()
-    #select emotion by keyboard
-    #gui.emotion = gui.select_emotion(emotion) ->  emotion via keyboard
-    #select talking by keyboard
-    gui.talking = gui.select_talking()
-
-    #get text input 
-    question = hearing.question
-
-    if question != last_question:
-        last_question=question
-        gui.last_question=last_question
-        # Generate text from the model
-        emotion, answer_text = language.generate_response(question)
-        gui.answer_text=answer_text
-        gui.emotion=emotion
-        #say the answer
-        speech.say(answer_text)
-
-    #get the vision
-    vision.update_faces()
-
-    # Update the robot head display
-    #gui.update_display(emotion, talking,last_question,answer_text) -> in the tread gui
+try:
+    # Main program loop
+    running = True
+    i=0
 
 
+    gui_thread = threading.Thread(target=gui_face.run_gui, daemon=True)
+    gui_thread.start()
 
-    #print("game loop",i)
-    i+=1	
-    #pause for other threats
-    time.sleep(0.01)
+    while running:
+        running = gui_face.handle_events()
 
-# Clean up
-#gui.pygame.quit() -> in run gui
+
+        #get text input 
+        question = hearing.question
+
+        if question != last_question:
+            last_question=question
+            gui_face.last_question=last_question
+            # Generate text from the model
+            emotion, answer_text = language.generate_response(question)
+            gui_face.answer_text=answer_text
+            gui_face.emotion=emotion
+            #say the answer
+            talktime=speech.say(answer_text)
+            #set talking time
+            gui_face.start_talking(talktime)
+
+        #get the vision
+        if VISION:
+            vision.update_faces()
+
+        #print("game loop",i)
+        i+=1	
+        #pause for other threats
+        time.sleep(0.01)
+
+finally: #clean up
+    print("Beende das Programm...")
+    gui_face.running = False  # Beende die GUI-Schleife sicher
+    gui_thread.join()  # Warte, bis der GUI-Thread beendet ist
+    print("Programm beendet.")
+
