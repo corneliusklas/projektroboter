@@ -4,9 +4,9 @@ import pyttsx3
 import time
 import pygame
 
+engine = None  # Globale Variable für das pyttsx3-Objekt
 
-
-engine_type="openai" # "espeak_win", "native" oder "openai"
+engine_type="native" # "espeak_win", "native" oder "openai"
 if engine_type == "openai":
     import openai
     # Get the API key
@@ -95,8 +95,12 @@ def say_with_native(text, speed=175, voice_index=0):
     """benutzt die native Sprachsynthese des Betriebssystems.
     Unter Linux: Spricht den Text mit espeak aus.
     Unter Windows: Spricht den Text mit einer bestimmten Windows-Stimme aus."""
-    engine = pyttsx3.init()
+    global engine
+    if engine is None:  # Nur einmal initialisieren
+        engine = pyttsx3.init()
     voices = engine.getProperty('voices')
+
+
 
     if 0 <= voice_index < len(voices):  # Sicherstellen, dass der Index existiert
         engine.setProperty('voice', voices[voice_index].id)
@@ -106,6 +110,11 @@ def say_with_native(text, speed=175, voice_index=0):
     engine.setProperty('rate', speed)
     engine.say(text)
     engine.runAndWait()
+
+    words = len(text.split())
+    corrector = 1.2
+    duration = words / speed * 60 * corrector
+    return duration
 
 #def get_audio_duration(file_path):
 #    """Berechnet die Dauer einer MP3-Datei in Sekunden."""
