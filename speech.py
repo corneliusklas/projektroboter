@@ -2,7 +2,11 @@ import subprocess
 import os
 import pyttsx3
 import time
-engine_type="espeak" # "espeak", "windows" oder "openai"
+import pygame
+
+
+
+engine_type="openai" # "espeak_win", "native" oder "openai"
 if engine_type == "openai":
     import openai
     # Get the API key
@@ -11,6 +15,30 @@ if engine_type == "openai":
     # Initialize the OpenAI client with the loaded API key
     openai.api_key = api_key
 
+def play_audio_pygame(file_path):
+    """
+    Spielt eine Audio-Datei mit pygame im Hintergrund ab und gibt die Dauer zurück.
+    
+    Args:
+        file_path (str): Pfad zur Audio-Datei (WAV oder MP3).
+    
+    Returns:
+        float: Die Dauer der Datei in Sekunden.
+    """
+    # Pygame initialisieren
+    pygame.mixer.init()
+    
+    # Datei laden
+    pygame.mixer.music.load(file_path)
+    
+    # Dauer berechnen
+    sound = pygame.mixer.Sound(file_path)
+    duration = sound.get_length()  # Gibt die Dauer in Sekunden zurück
+    
+    # Abspielen
+    pygame.mixer.music.play()
+
+    return duration
 
 def say(text,lang="de", speed=175, pitch=50):
     """
@@ -26,18 +54,18 @@ def say(text,lang="de", speed=175, pitch=50):
     Returns:
         float: Geschätzte Dauer der Sprachausgabe in Sekunden.
     """
-    if engine_type == "espeak":
-        return say_with_espeak(text, lang, speed, pitch)
-    elif engine_type == "windows":
-        return say_with_windows(text, speed,voice_index=0)
+    if engine_type == "espeak_win":
+        return say_with_espeak_win(text, lang, speed, pitch)
+    elif engine_type == "native":
+        return say_with_native(text, speed,voice_index=0)
     elif engine_type == "openai":
         return say_with_openai(text)
     else:
         print("Ungültige Engine. Wähle 'espeak', 'windows' oder 'openai'.")
         return None
 
-def say_with_espeak(text, lang="de", speed=175, pitch=50):
-    """Spricht Text mit eSpeak nicht blockierend aus."""
+def say_with_espeak_win(text, lang="de", speed=175, pitch=50):
+    """Spricht Text mit eSpeak nicht blockierend aus. - Unter Windows"""
     espeak_path = os.path.join(os.getcwd(), "eSpeak", "command_line", "espeak.exe")
     
     if not os.path.exists(espeak_path):
@@ -63,8 +91,10 @@ def say_with_espeak(text, lang="de", speed=175, pitch=50):
     duration = words / speed * 60 * corrector
     return duration
 
-def say_with_windows(text, speed=175, voice_index=0):
-    """Spricht den Text mit einer bestimmten Windows-Stimme aus."""
+def say_with_native(text, speed=175, voice_index=0):
+    """benutzt die native Sprachsynthese des Betriebssystems.
+    Unter Linux: Spricht den Text mit espeak aus.
+    Unter Windows: Spricht den Text mit einer bestimmten Windows-Stimme aus."""
     engine = pyttsx3.init()
     voices = engine.getProperty('voices')
 
@@ -77,14 +107,14 @@ def say_with_windows(text, speed=175, voice_index=0):
     engine.say(text)
     engine.runAndWait()
 
-def get_audio_duration(file_path):
-    """Berechnet die Dauer einer MP3-Datei in Sekunden."""
-    try:
-        audio = MP3(file_path)
-        return audio.info.length  # Länge in Sekunden
-    except Exception as e:
-        print(f"Fehler beim Abrufen der Audiodauer: {e}")
-        return None
+#def get_audio_duration(file_path):
+#    """Berechnet die Dauer einer MP3-Datei in Sekunden."""
+#    try:
+#        audio = MP3(file_path)
+#        return audio.info.length  # Länge in Sekunden
+#    except Exception as e:
+#        print(f"Fehler beim Abrufen der Audiodauer: {e}")
+#        return None
 
 def say_with_openai(text, voice="alloy", model="tts-1"):
     """
@@ -105,7 +135,7 @@ def say_with_openai(text, voice="alloy", model="tts-1"):
             input=text
         )
 
-        # Speichere die Datei als 'output.mp3'
+        # Speichere die Datei als 'output.mp3/wav'
         audio_file_path = "output.mp3"
         with open(audio_file_path, "wb") as f:
             f.write(response.content)
@@ -113,21 +143,13 @@ def say_with_openai(text, voice="alloy", model="tts-1"):
         print(f"Audio gespeichert unter: {audio_file_path}")
 
         # Warte kurz, um sicherzustellen, dass die Datei vollständig gespeichert wurde
-        time.sleep(1)
+        #time.sleep(1)
 
-        # Berechne die tatsächliche Audiodauer
-        duration = get_audio_duration(audio_file_path)
+        duration=play_audio_pygame(audio_file_path)
 
-        # Falls die Dauer erfolgreich berechnet wurde, gebe sie zurück
-        if duration is not None:
-            print(f"Geschätzte Dauer: {duration:.2f} Sekunden")
-        else:
-            print("Konnte die Dauer der Audiodatei nicht berechnen.")
+        print(f"Dauer:", duration, "Sekunden")
 
-        # Spiele die Datei ab (unter Windows)
-        os.system(f"start {audio_file_path}")  # Windows
-        # os.system(f"afplay {audio_file_path}")  # macOS
-        # os.system(f"mpg123 {audio_file_path}")  # Linux
+
 
         return duration
     except Exception as e:
@@ -136,6 +158,7 @@ def say_with_openai(text, voice="alloy", model="tts-1"):
 
 if __name__ == "__main__":
 
-    duration = say("Hallo, ich bin ein Roboter! 42")
-    print(f"Geschätzte Dauer: {duration:.2f} Sekunden")
+    duration = say("Hallo, ich bin ein Roboter! 42.")
+    pygame.time.wait(int(duration*1000))
+    #print(f"Geschätzte Dauer: {duration:.2f} Sekunden")
     
