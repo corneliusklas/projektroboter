@@ -5,8 +5,6 @@ import numpy as np
 import threading
 import queue
 from openai import OpenAI
-from dotenv import load_dotenv
-import os
 import time
 
 global RECORDING
