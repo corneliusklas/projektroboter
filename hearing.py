@@ -15,9 +15,9 @@ lan="de"
 
 # Get the API key
 import loadapikey
-loadapikey.api_key
+api_key=loadapikey.api_key
 
-api_key = os.getenv('API_KEY')
+#api_key = os.getenv('API_KEY')
 # Initialize the OpenAI client with the loaded API key
 client = OpenAI(api_key=api_key)
 

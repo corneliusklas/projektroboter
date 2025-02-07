@@ -16,11 +16,11 @@ import gui_face
 import threading
 import time
 
+print("Starte das Programm...")
+#VISION = False
 
-VISION = False
-
-if VISION:
-    import vision
+#if VISION:
+#    import vision
 
 #initialize variables
 last_question= hearing.question
@@ -38,8 +38,8 @@ hearing.question = "System: Du wurdest gerade angeschaltet."
 
 
 #gui.init() is done in its own threat
-if VISION:
-    vision.init_camera()
+#if VISION:
+#    vision.init_camera()
 
 try:
     # Main program loop
@@ -50,12 +50,17 @@ try:
     gui_thread = threading.Thread(target=gui_face.run_gui, daemon=True)
     gui_thread.start()
 
+
     while running:
         running = gui_face.handle_events()
 
 
         #get text input 
         question = hearing.question
+        if hearing.RECORDING:
+            gui_face.led_red_green_inverted = False
+        else:
+            gui_face.led_red_green_inverted = True
 
         if question != last_question:
             last_question=question
@@ -66,12 +71,13 @@ try:
             gui_face.emotion=emotion
             #say the answer
             talktime=speech.say(answer_text)
-            #set talking time
+            
+             #set talking time
             gui_face.start_talking(talktime)
 
         #get the vision
-        if VISION:
-            vision.update_faces()
+        #if VISION:
+        #    vision.update_faces()
 
         #print("game loop",i)
         i+=1	

@@ -4,7 +4,9 @@ import time
 import math
 import bluetooth_face  # Import für den realen Roboterkopf
 
+BLUETOOTH=True
 running = True  # Globale Laufvariable für die GUI
+connected=False
 
 # Initialisiere die Variablen am Anfang
 start_u = None
@@ -34,7 +36,7 @@ led_yellow = False
 led_red_green_inverted = False
 
 # Roboterkopfdrehung
-robot_rotation = 0.5  # 0-1
+r = 0.5  # 0-1
 
 # Globale Variablen
 global emotion
@@ -54,7 +56,7 @@ last_state = {
     "w": w,
     "b": b,
     "e": e,
-    "robot_rotation": robot_rotation,
+    "r": r,
     "led_yellow": led_yellow,
     "led_red_green_inverted": led_red_green_inverted
 }
@@ -68,6 +70,13 @@ def init():
     pygame.display.set_caption("Robot Head")
     base_image = pygame.image.load("face/base.png")
     base_image = pygame.transform.scale(base_image, (sizex, sizey))
+
+    if BLUETOOTH:
+        global connected
+        connected=bluetooth_face.init()
+        move("l", 1)
+
+
 
 # Funktion zur Synchronisation mit dem realen Roboterkopf
 def sync_with_real_robot():
@@ -94,9 +103,10 @@ def sync_with_real_robot():
         bluetooth_face.move("e", e)
         last_state["e"] = e
 
-    if robot_rotation != last_state["robot_rotation"]:
-        bluetooth_face.move("r", robot_rotation)  # Skalierung zwischen 0 und 1
-        last_state["robot_rotation"] = robot_rotation
+    if r != last_state["r"]:
+        bluetooth_face.move("r", r)  # Skalierung zwischen 0 und 1
+        #print("r",r)    
+        last_state["r"] = r
 
     if led_yellow != last_state["led_yellow"]:
         bluetooth_face.move("y", 1 if led_yellow else 0)
@@ -109,7 +119,7 @@ def sync_with_real_robot():
 
 # Funktion zur Verarbeitung von Bewegungen (wie beim physischen Roboterkopf)
 def move(key, position):
-    global l, u, w, b, robot_rotation, led_yellow, led_red_green_inverted, e
+    global l, u, w, b, r, led_yellow, led_red_green_inverted, e
 
     if key == "e":  # Augenposition
         e = position  # e zwischen 0 und 1
@@ -125,7 +135,7 @@ def move(key, position):
     elif key == "b":  # Augenbrauen
         b = position   # 
     elif key == "r":  # Kopfdrehung
-        robot_rotation = position
+        r = position
     elif key == "g":  # LED Rot/Grün
         led_red_green_inverted = bool(position)
     elif key == "y":  # LED Gelb
@@ -141,7 +151,7 @@ def start_talking(_talk_time):
 
 # Funktion zur Verarbeitung aller Tasteneingaben
 def process_inputs():
-    global emotion, talking, l, u, w, b, e, robot_rotation, led_yellow, led_red_green_inverted, talk_time
+    global emotion, talking, l, u, w, b, e, r, led_yellow, led_red_green_inverted, talk_time
     global running
 
     if not pygame.get_init():  # Überprüfen, ob Pygame noch aktiv ist
@@ -162,6 +172,19 @@ def process_inputs():
     elif pressed[pygame.K_4]:
         emotion = "neutral"
         print("Emotion gesetzt auf: neutral")
+    elif pressed[pygame.K_5]:
+        emotion = "sleepy"
+        print("Emotion gesetzt auf: sleepy")
+    elif pressed[pygame.K_6]:
+        emotion = "neck0"
+        print("Emotion gesetzt auf: neck0")
+    elif pressed[pygame.K_7]:
+        emotion = "neck1"
+        print("Emotion gesetzt auf: neck1")
+    elif pressed[pygame.K_8]:
+        emotion = "neck0.5"
+        print("Emotion gesetzt auf: neck0.5")
+
 
     # Talking aktivieren
     if pressed[pygame.K_a]:  # Taste A startet das Sprechen
@@ -170,21 +193,21 @@ def process_inputs():
 
     # Augenlider steuern
     if pressed[pygame.K_q]:
-        move("l", max(0, l - 0.03))  # Augenlider schließen
+        move("l", max(0, l - 0.1))  # Augenlider schließen
     elif pressed[pygame.K_w]:
-        move("l", min(1, l + 0.03))  # Augenlider öffnen
+        move("l", min(1, l + 0.1))  # Augenlider öffnen
 
     # Oberlippenbewegung
     if pressed[pygame.K_e]:
-        move("u", min(1, u + 0.05))  # Oberlippe nach oben
+        move("u", min(1, u + 0.1))  # Oberlippe nach oben
     elif pressed[pygame.K_r]:
-        move("u", max(0, u - 0.05))  # Oberlippe nach unten
+        move("u", max(0, u - 0.1))  # Oberlippe nach unten
 
     # Unterlippenbewegung
     if pressed[pygame.K_t]:
-        move("w", min(1, w + 0.05))  # Unterlippe nach unten
+        move("w", min(1, w + 0.1))  # Unterlippe nach unten
     elif pressed[pygame.K_z]:
-        move("w", max(0, w - 0.05))  # Unterlippe nach oben
+        move("w", max(0, w - 0.1))  # Unterlippe nach oben
 
     # Augenbrauendrehung
     if pressed[pygame.K_s]:
@@ -206,10 +229,12 @@ def process_inputs():
 
     # Roboterkopfdrehung steuern
     if pressed[pygame.K_y]:
-        move("r", min(1, robot_rotation + 0.05))  # Kopf im Uhrzeigersinn
+        move("r", min(1, r + 0.1))  # Kopf im Uhrzeigersinn
     elif pressed[pygame.K_x]:
-        move("r", max(0, robot_rotation - 0.05))  # Kopf gegen den Uhrzeigersinn
+        move("r", max(0, r - 0.1))  # Kopf gegen den Uhrzeigersinn
 
+    # wait a bit to not overload the system
+    time.sleep(0.05)
     return True
 
 
@@ -234,29 +259,37 @@ def update_positions_based_on_emotion_and_talking(emotion):
     last_update_time = current_time
 
     if emotion != last_emotion:
+        print(f"Emotion geändert zu: {emotion}")
         # Emotion einmalig die Werte setzen
         if emotion == "happy":
             move("b", 1)  # Augenbrauen in A form
-            move("u", 0) # lachen
-            move("w", 0)
-            #augen weit offen
+            move("u", 0.1) # lachen
+            move("w", 0.1)
             move("l", 1)
         elif emotion == "angry":
             move("b", 0)  # Augenbrauen in V Form
-            move("u", 1) # mund etwas offen und nach unten
+            move("u", .9) # mund etwas offen und nach unten
             move("w", .8)
             # augen zugekniffen
             move("l", 0.3)
         elif emotion == "sad":
-            move("b", 1)  # Augenbrauen in a form
-            move("u", 1)
-            move("w", 1)
+            move("b", .9)  # Augenbrauen in a form
+            move("u", .9)
+            move("w", .9)
+            move("l", 0.5)
         elif emotion == "neutral":
             move("b", 0.5)  # Augenbrauen horizontal
             move("u", 0.5)
             move("w", 0.5)
+            move("l", 1)
         elif emotion == "sleepy":
-            move("l", 0.1)
+            move("l", 0)
+        elif emotion == "neck0":
+            move("r", 0)
+        elif emotion == "neck1":
+            move("r", 1)
+        elif emotion == "neck0.5":
+            move("r", 0.5)
 
         #wenn gerade geredet wird: passe auch startwerte an
         if talking:
@@ -377,7 +410,7 @@ def draw_leds():
 
 # Funktion zum Zeichnen des Kompasses
 def draw_compass():
-    global screen, sizex, sizey, robot_rotation
+    global screen, sizex, sizey, r
 
     compass_radius = 0.05 * sizex
     center_x = int(0.9 * sizex)
@@ -388,7 +421,7 @@ def draw_compass():
 
     # Pfeil des Kompasses
     arrow_length = 0.04 * sizex
-    arrow_angle = math.radians(robot_rotation*180+180)
+    arrow_angle = math.radians(r*180+180)
 
     end_x = center_x + arrow_length * math.cos(arrow_angle)
     end_y = center_y - arrow_length * math.sin(arrow_angle)
@@ -457,7 +490,7 @@ def draw_face():
     draw_compass()
 
     # Antworttext anzeigen
-    font = pygame.font.SysFont('Arial', int(0.03 * sizex))
+    font = pygame.font.SysFont('Arial', int(0.01 * sizex))
     text1 = font.render(last_question, True, (0, 0, 0))
     text2 = font.render(answer_text, True, (0, 0, 0))
     screen.blit(text1, (0.05 * sizex, 0.92 * sizey))
@@ -516,13 +549,13 @@ def play_sequence(sequence, loop=False):
         "w": w,
         "b": b,
         "e": e,
-        "robot_rotation": robot_rotation,
+        "r": r,
         "led_yellow": led_yellow,
         "led_red_green_inverted": led_red_green_inverted,
     }
 
     def execute_sequence():
-        global l, u, w, b, e, robot_rotation, led_yellow, led_red_green_inverted
+        global l, u, w, b, e, r, led_yellow, led_red_green_inverted
 
         while True:
             for step in sequence:
@@ -559,28 +592,37 @@ def play_sequence(sequence, loop=False):
     sequence_thread = threading.Thread(target=execute_sequence, daemon=True)
     sequence_thread.start()
 
+    return sequence_thread
+
+
+
 # Idle Bewegungssequenz
-sequence = [
+sequenceblink = [
     {"l": 0, "pause": 0.5},
     {"l": "current", "pause": 5},
     {'e': 0.1, 'pause': 0.5},
     {'e': 0.9, 'pause': 0.5},
     {'e': 0.5, 'pause': 0.5},
 ]
+# Idle Bewegungssequenz für kopf drehung
+sequenceneck = [
+    {"r": 0.6, "pause": 2},
+    {"r": .4,  "pause": 2},
+    {"r": 0.5, "pause": 20},
 
-BLUETOOTH=True
+]
+
 
 # GUI ausführen
 def run_gui():
     global running
     init()
 
+    # Sequenz abspielen
+    blinking = play_sequence(sequenceblink, loop=True)
+    #neck= play_sequence(sequenceneck, loop=True)
+
     try:
-        # Sequenz abspielen
-        play_sequence(sequence, loop=True)
-        if BLUETOOTH:
-            bluetooth_face.init()
-            move("l", 1)
 
         while running:
             if not handle_events():
@@ -595,11 +637,16 @@ def run_gui():
         # Sicherstellen, dass die GUI beendet wird
         running = False  # Beende die Schleife sicher
         pygame.quit()  # Pygame sauber beenden
+    
+
+
+
 
 # Hauptprogramm bei standalone-Ausführung
 def standalone_main():
-    global running
 
+    global running
+    #init()
     gui_thread = threading.Thread(target=run_gui, daemon=True)
     gui_thread.start()
 

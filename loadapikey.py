@@ -1,4 +1,4 @@
-# Pfad zur Datei im übergeordneten Verzeichnis
+#aus textdatei# Pfad zur Datei im übergeordneten Verzeichnis
 import os
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
@@ -13,5 +13,11 @@ with open(file_path) as f:
         if "client = OpenAI(api_key=" in line:
             #get the api key
             api_key = line.split("'")[1]
-            print("api_key successfully loaded from keys.txt") #,api_key)
+            print("api_key successfully loaded from keys.txt")#,api_key)
             break
+# alternative: von config.json laden (gitiignore)
+#import json
+#with open('config.json') as f:
+#    data = json.load(f)
+#    api_key = data['api_key']
+#    print("api_key successfully loaded from config.json")#,api_key)
