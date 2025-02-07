@@ -1,7 +1,6 @@
 import subprocess
 import os
 import pyttsx3
-import time
 import pygame
 
 engine = None  # Globale Variable für das pyttsx3-Objekt
