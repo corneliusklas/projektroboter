@@ -1,0 +1,54 @@
+# ?? Python-bezogene Dateien
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.log
+
+# ?? Virtuelle Python-Umgebung (venv)
+venv/
+env/
+
+# ?? Paket-Manager Dateien
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ?? IDE-spezifische Dateien
+.vscode/
+.idea/
+*.iml
+*.sublime-workspace
+
+# ?? Build- und Distribution-Verzeichnisse
+build/
+dist/
+*.egg-info/
+*.spec
+
+# ?? Tempor‰re Dateien & Systemdateien
+.DS_Store
+Thumbs.db
+
+# ?? Groﬂe Dateien & Bin‰rdateien
+*.exe
+*.pkg
+*.pyz
+*.tar.gz
+*.zip
+*.rar
+*.iso
+*.mp4
+*.mp3
+*.wav
+
+# ?? Falls du Jupyter Notebooks verwendest (optional)
+.ipynb_checkpoints/
+
+# ?? Falls du Umgebungsvariablen lokal speicherst (z.B. API-Keys)
+.env
+
+#eigene
+config.json
+.vscode/settings.json
+
+
