@@ -57,7 +57,7 @@ def say(text,lang="de", speed=175, pitch=50):
     if engine_type == "espeak_win":
         return say_with_espeak_win(text, lang, speed, pitch)
     elif engine_type == "native":
-        return say_with_native(text, speed,voice_index=0)
+        return say_with_native(text, speed,voice_index=0, lang=lang, pitch=pitch)
     elif engine_type == "openai":
         return say_with_openai(text)
     else:
@@ -91,7 +91,7 @@ def say_with_espeak_win(text, lang="de", speed=175, pitch=50):
     duration = words / speed * 60 * corrector
     return duration
 
-def say_with_native(text, speed=175, voice_index=0):
+def say_with_native(text, speed=175, voice_index=0, lang="de", pitch=50):
     """benutzt die native Sprachsynthese des Betriebssystems.
     Unter Linux: Spricht den Text mit espeak aus.
     Unter Windows: Spricht den Text mit einer bestimmten Windows-Stimme aus."""
@@ -108,6 +108,9 @@ def say_with_native(text, speed=175, voice_index=0):
         print("Ungültiger Index, Standardstimme wird verwendet.")
 
     engine.setProperty('rate', speed)
+    engine.setProperty('volume', 1.0)
+    engine.setProperty('pitch', pitch)
+    engine.setProperty('language', lang)
     engine.say(text)
     engine.runAndWait()
 
