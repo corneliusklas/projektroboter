@@ -2,10 +2,11 @@ import subprocess
 import os
 import pyttsx3
 import pygame
+import platform
 
 engine = None  # Globale Variable für das pyttsx3-Objekt
 
-engine_type="native" # "espeak_win", "native" oder "openai"
+engine_type="espeak" # "espeak", "native" oder "openai"
 if engine_type == "openai":
     import openai
     # Get the API key
@@ -53,8 +54,8 @@ def say(text,lang="de", speed=175, pitch=50):
     Returns:
         float: Geschätzte Dauer der Sprachausgabe in Sekunden.
     """
-    if engine_type == "espeak_win":
-        return say_with_espeak_win(text, lang, speed, pitch)
+    if engine_type == "espeak":
+        return say_with_espeak(text, lang, speed, pitch)
     elif engine_type == "native":
         return say_with_native(text, speed,voice_index=0, lang=lang, pitch=pitch)
     elif engine_type == "openai":
@@ -63,34 +64,53 @@ def say(text,lang="de", speed=175, pitch=50):
         print("Ungültige Engine. Wähle 'espeak', 'windows' oder 'openai'.")
         return None
 
-def say_with_espeak_win(text, lang="de", speed=175, pitch=50):
-    """Spricht Text mit eSpeak nicht blockierend aus. - Unter Windows"""
-    espeak_path = os.path.join(os.getcwd(), "eSpeak", "command_line", "espeak.exe")
-    
-    if not os.path.exists(espeak_path):
-        print("eSpeak.exe wurde nicht gefunden!")
-        return
+def say_with_espeak(text, lang="de", speed=175, pitch=50):
+    """
+    Einheitliche eSpeak-Sprachausgabe für Windows & Linux.
 
-    command = [
-        espeak_path,
-        f"-v{lang}",
-        f"-s{speed}",
-        f"-p{pitch}",
-        text
-    ]
-    
+    Args:
+        text (str): Der zu sprechende Text.
+        lang (str): Sprache (z.B. 'de' für Deutsch, 'en' für Englisch).
+        speed (int): Sprechgeschwindigkeit (Standard: 175).
+        pitch (int): Tonhöhe (0-99, Standard: 50).
+
+    Returns:
+        float: Geschätzte Dauer der Sprachausgabe in Sekunden.
+    """
+    if platform.system() == "Windows":
+        espeak_path = os.path.join(os.getcwd(), "eSpeak", "command_line", "espeak.exe")
+        if not os.path.exists(espeak_path):
+            print("eSpeak.exe wurde nicht gefunden!")
+            return
+        command = [
+            espeak_path,
+            f"-v{lang}",
+            f"-s{speed}",
+            f"-p{pitch}",
+            text
+        ]
+    else:  # Linux / Raspberry Pi
+        command = [
+            "espeak",
+            f"-v{lang}",
+            f"-s{speed}",
+            f"-p{pitch}",
+            text
+        ]
+
     try:
         subprocess.Popen(command)
-        print("Text wird gesprochen mit eSpeak...")
+        print(f"Text wird gesprochen mit eSpeak ({platform.system()})...")
     except Exception as e:
         print(f"Fehler beim Ausführen von eSpeak: {e}")
 
+    # Berechnung der Sprachausgabe-Dauer
     words = len(text.split())
-    corrector = 1.2
+    corrector = 1.2  # Anpassungsfaktor für realistische Berechnung
     duration = words / speed * 60 * corrector
     return duration
 
-def say_with_native(text, speed=175, voice_index=0, lang="de", pitch=50):
+def say_with_native(text, speed=175, voice_index=0):
     """benutzt die native Sprachsynthese des Betriebssystems.
     Unter Linux: Spricht den Text mit espeak aus.
     Unter Windows: Spricht den Text mit einer bestimmten Windows-Stimme aus."""
@@ -98,6 +118,9 @@ def say_with_native(text, speed=175, voice_index=0, lang="de", pitch=50):
     if engine is None:  # Nur einmal initialisieren
         engine = pyttsx3.init()
     voices = engine.getProperty('voices')
+    print("Verfügbare Stimmen:")
+    for i, voice in enumerate(voices):
+        print(f"{i}: {voice.id}")
 
 
 
@@ -109,7 +132,7 @@ def say_with_native(text, speed=175, voice_index=0, lang="de", pitch=50):
     engine.setProperty('rate', speed)
     engine.setProperty('volume', 1.0)
     engine.setProperty('pitch', pitch)
-    engine.setProperty('language', lang)
+
     engine.say(text)
     engine.runAndWait()
 
