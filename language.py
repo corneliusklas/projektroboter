@@ -1,12 +1,23 @@
 from openai import OpenAI
 import re
 import os
+import json
+
+#load language from config file
+config_file_path = ("config.json")
+with open(config_file_path, 'r') as config_file:
+    config = json.load(config_file)
+lang = config.get('lang', '')
+
 
 # Pfad zur System-Prompt-Datei
 system_prompt_path = os.path.join(os.path.dirname(__file__), 'system_prompt.txt')
 # Laden des System-Prompts aus der Textdatei
 with open(system_prompt_path, 'r', encoding='utf-8') as file:
     system_prompt = file.read()
+#replage $lang$ with the language
+system_prompt = system_prompt.replace("$lang$", lang)
+
 
 #function to remove incomplete sentences
 def remove_incomplete_sentences(text):
@@ -71,7 +82,7 @@ def generate_response(question, role="user"):
     #    print("error: ",error)
     #    #output the error as speeech
     #    return "sad",error
-        answer = "I could not use OpenAI. Probably no internet connection."
+        answer = "sad# I could not use OpenAI. Probably no internet connection."
 
 
     # Add the assistant's message to the history
