@@ -9,6 +9,9 @@ rotpos = 0.5
 
 PRINT=False
 connected = False
+import platform
+
+print("Platform: ", platform.system())
 
 def init():
 
@@ -17,10 +20,17 @@ def init():
     config_file_path = ("config.json")
     with open(config_file_path, 'r') as config_file:
         config = json.load(config_file)
-    com_port = config.get('com_port', '')
+    com_port = config.get('head_com_port', '')
+    mac_adress = config.get('head_mac_address', '')
+
+    # Connect to the serial port in linux. in windows do it once manually
+    if platform.system() == "Linux":
+        import subprocess
+        subprocess.run(["sudo", "rfcomm", "bind", com_port, mac_adress], check=True)
 
 
     global ser
+    global connected	
     # Set up serial communication
     print("Connecting to serial port for robot head...")
     for i in range(5):
@@ -41,6 +51,12 @@ def init():
 
 def move(key, postion):
     global ser
+    global PRINT
+    global connected
+    if not connected:
+        print("Serial port not connected")
+        return
+
     # Assuming postion is a float, convert it to bytes and concatenate with 'e'
     # command = key.encode() + str(postion).encode() #b'e1' command to move the robot eyes
     command=bytes(key + str(postion) + '\n', 'utf-8')
