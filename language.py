@@ -53,24 +53,25 @@ def generate_response(question, role="user"):
     # Initialize the OpenAI client
     
     # Generate text from the model
-    #try:
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=history,
-        temperature=0.8,
-        max_tokens=64,
-    )
-    #get the answer
-    answer = response.choices[0].message.content
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=history,
+            temperature=0.8,
+            max_tokens=64,
+        )
+        #get the answer
+        answer = response.choices[0].message.content
 
-    #remove incomplete sentences. Uncomplete sentences are caused by token limit. This is the last stentence without a dot, question mark or exclamation mark.
-    answer = remove_incomplete_sentences(answer)
-    #except:
-    #    error = str(sys.exc_info()[1])
+        #remove incomplete sentences. Uncomplete sentences are caused by token limit. This is the last stentence without a dot, question mark or exclamation mark.
+        answer = remove_incomplete_sentences(answer)
+    except:
+    #     error = str(sys.exc_info()[1])
     #    #print the error
     #    print("error: ",error)
     #    #output the error as speeech
     #    return "sad",error
+        answer = "I could not use OpenAI. Probably no internet connection."
 
 
     # Add the assistant's message to the history
