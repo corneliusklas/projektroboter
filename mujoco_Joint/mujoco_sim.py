@@ -1,6 +1,8 @@
 import mujoco
 import mujoco.viewer
 import matplotlib.pyplot as plt
+IK = True
+
 #xml = """
 #<mujoco>
 #  <worldbody>
@@ -14,6 +16,9 @@ import matplotlib.pyplot as plt
 #model = mujoco.MjModel.from_xml_string(xml)
 model = mujoco.MjModel.from_xml_path("model/defaultrobot.xml") #tendonjoint.xml") 
 data = mujoco.MjData(model)
+#print all data fields
+#print(dir(data))
+
 
 print(model.ngeom)
 
@@ -37,10 +42,21 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
  
   start = time.time()
 
+  if IK:
+    #pass
+    for i in range(len(d.ten_length)):
+      print("d.ten_length[",i,"]=",d.ten_length[i])
+  else:
   # Set initial control values for the actuators
-  d.ctrl[0] = 0.044
-  d.ctrl[1] = 0.044
+    d.ctrl[1] = 0.046
+    d.ctrl[2] = 0.046
+    d.ctrl[3] = 0.199
+    d.ctrl[4] = 0.199
+    d.ctrl[5] = 0.276
+    d.ctrl[6] = 0.276
 
+
+ 
   while viewer.is_running(): #and time.time() - start < 30: # Close the viewer automatically after 30 wall-seconds.
     step_start = time.time()
 
@@ -55,12 +71,15 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
     # Pick up changes to the physics state, apply perturbations, update options from GUI.
     viewer.sync()
 
-    # Rudimentary time keeping, will drift relative to wall clock.
-    time_until_next_step = m.opt.timestep - (time.time() - step_start)
-    if time_until_next_step > 0:
-      time.sleep(time_until_next_step)
-    #time.sleep(.001)
-    #show the simulation time
-    #print(d.time)
+    if IK:
+      pass
+    else:
+      # Rudimentary time keeping, will drift relative to wall clock.
+      time_until_next_step = m.opt.timestep - (time.time() - step_start)
+      if time_until_next_step > 0:
+        time.sleep(time_until_next_step)
+      #time.sleep(.001)
+      #show the simulation time
+      #print(d.time)
 
 
