@@ -1,0 +1,329 @@
+<mujoco model="from_simulink">
+  <compiler angle="degree"/>
+  <option gravity="0 0 0"/>
+  
+<asset>
+  <mesh name="root_BP" file="stl/root_bp.stl"/>
+  <mesh name="Spine_BT" file="stl/spine_bt.stl"/>
+  <mesh name="la_segment" file="stl/la_segment.stl"/>
+  <mesh name="lesegment" file="stl/lesegmentSTL.stl"/>
+  <mesh name="lfoot" file="stl/lfoot.stl"/>
+  <mesh name="rfoot" file="stl/rfoot.stl"/>
+  <mesh name="lk_segment" file="stl/lk_segment.stl"/>
+  <mesh name="lwsegment" file="stl/lwsegment.stl"/>
+  <mesh name="lefthand_solid" file="stl/lefthand_solid.stl"/>
+  <mesh name="leftshoulder_ls" file="stl/leftshoulder_ls.stl"/>
+  <mesh name="neck_bun" file="stl/neck_bun.stl"/>
+  <mesh name="RightHand_solid" file="stl/RightHand_solid.stl"/>
+  <mesh name="rightshoulder_rs" file="stl/rightshoulder_rs.stl"/>
+  <mesh name="torso_collar" file="stl/torso_collar.stl"/>
+  <mesh name="Torso_KIT_solid" file="stl/Torso_KIT_solid.stl"/>
+  <mesh name="eyes_mm" file="stl/eyes_mm.stl"/>
+  <mesh name="head_headjoint" file="stl/head_headjoint.stl"/>
+</asset>
+
+<worldbody>
+    <!-- Lighting and environment -->
+    <light directional="true" pos="-0.5 0.5 3" dir="0 0 -1" />
+    <geom name="floor" pos="0 0 0" size="1 1 1" type="plane" rgba="1 0.83 0.61 0.5" contype="0" conaffinity="0"/>
+    <body name="base" pos="0 0 0">
+      
+        <!-- Cartesian Joint -->
+        <joint name="cart_x" type="slide" damping="50" axis="1 0 0"/>
+        <joint name="cart_y" type="slide" damping="50" axis="0 1 0"/>
+        <joint name="cart_z" type="slide" damping="50" axis="0 0 1"/>
+        
+        <!-- Gimbal Joint -->
+        <joint name="gimbal_x" type="hinge" damping="0.1" axis="1 0 0"/>
+        <joint name="gimbal_y" type="hinge" damping="0.1" axis="0 1 0"/>
+        <joint name="gimbal_z" type="hinge" damping="0.1" axis="0 0 1"/>
+
+        <!-- Left Leg -->
+        <body name="lh_base" pos="-0.052 0 0">
+            <geom name="lh_dummy_mass" type="box" size=".02 .02 .01" rgba=".5 .5 .5 1" contype="0" conaffinity="0"/>
+            <body>
+                <!-- Gimbal Joint: LH_joint -->
+                <joint name="LH_x" type="hinge" axis="1 0 0" damping="0.1"/>
+                <joint name="LH_z" type="hinge" axis="0 0 1" damping="0.1"/>
+                <joint name="LH_y" type="hinge" axis="0 1 0" damping="0.1"/>
+
+                <body name="lk_segment" pos="0 0 -0.245">
+                    <geom type="mesh" mesh="lk_segment" rgba="0.2 0.6 0.4 1" contype="0" conaffinity="0"/>
+                    <body>
+                        <!-- Gimbal Joint: LK_joint -->
+                        <joint name="LK_x" type="hinge" axis="1 0 0" damping="0.1"/>
+                        <joint name="LK_z" type="hinge" axis="0 0 1" damping="0.1"/>
+                        <joint name="LK_y" type="hinge" axis="0 1 0" damping="0.1"/>
+
+                        <body name="la_segment" pos="0 0 -0.246">
+                            <geom type="mesh" mesh="la_segment" rgba="0.2 0.6 0.4 1" contype="0" conaffinity="0"/>
+                            <body>
+                                <!-- Gimbal Joint: LA_joint -->
+                                <joint name="LA_x" type="hinge" axis="1 0 0" damping="0.1"/>
+                                <joint name="LA_z" type="hinge" axis="0 0 1" damping="0.1"/>
+                                <joint name="LA_y" type="hinge" axis="0 1 0" damping="0.1"/>
+
+                                
+                                <geom type="mesh" mesh="lfoot" rgba="0.2 0.6 0.4 1" contype="0" conaffinity="0"/>
+                            </body>
+                        </body>
+                    </body>
+                </body>
+            </body>
+        </body>
+
+        <!-- Right Leg -->
+        <body name="rh_base" pos="0.052 0 0">
+            <geom name="rh_dummy_mass" type="box" size=".02 .02 .01" rgba=".5 .5 .5 1" contype="0" conaffinity="0"/>
+
+            <body>
+                <!-- Gimbal Joint: RH_joint -->
+                <joint name="RH_x" type="hinge" axis="1 0 0" damping="0.1"/>
+                <joint name="RH_z" type="hinge" axis="0 0 1" damping="0.1"/>
+                <joint name="RH_y" type="hinge" axis="0 1 0" damping="0.1"/>
+
+                <body name="rk_segment" pos="0 0 -0.245">
+                    <geom type="mesh" mesh="lk_segment" rgba="0.4 0.4 1 1" contype="0" conaffinity="0"/>
+
+                    <body>
+                        <!-- Gimbal Joint: RK_joint -->
+                        <joint name="RK_x" type="hinge" axis="1 0 0" damping="0.1"/>
+                        <joint name="RK_z" type="hinge" axis="0 0 1" damping="0.1"/>
+                        <joint name="RK_y" type="hinge" axis="0 1 0" damping="0.1"/>
+
+                        <body name="ra_segment" pos="0 0 -0.246">
+                            <geom type="mesh" mesh="la_segment" rgba="0.4 0.4 1 1" contype="0" conaffinity="0"/>
+                            <body>
+                                <!-- Gimbal Joint: RA_joint -->
+                                <joint name="RA_x" type="hinge" axis="1 0 0" damping="0.1"/>
+                                <joint name="RA_z" type="hinge" axis="0 0 1" damping="0.1"/>
+                                <joint name="RA_y" type="hinge" axis="0 1 0" damping="0.1"/>
+
+                                <geom type="mesh" mesh="rfoot" rgba="0.4 0.4 1 1" contype="0" conaffinity="0"/>
+                            </body>
+                        </body>
+                    </body>
+                </body>
+            </body>
+        </body>
+
+
+
+      
+        <!-- bp geometry -->
+        <body name="bp_segment" pos="0 0 0.04">
+            <geom type="mesh" mesh="root_BP" rgba="1 0.6 0.4 1" contype="0" conaffinity="0"/>
+
+            <body name="BP_joint_body">
+                <!-- Joint X -->
+                <joint name="BP_x" type="hinge" damping="0.1" axis="1 0 0" limited="true" range="-90 90"/>
+                <!-- Joint Z -->
+                <joint name="BP_z" type="hinge" damping="0.1" axis="0 0 1" limited="true" range="-90 90"/>
+                <!-- Joint Y -->
+                <joint name="BP_y" type="hinge" damping="0.1" axis="0 1 0" limited="true" range="-90 90"/>
+                <body name="bt_segment" pos="0 0 0.06">
+                    <geom type="mesh" mesh="Spine_BT" rgba="1 0.6 0.4 1" contype="0" conaffinity="0"/>
+                    <body name="BT_joint_body">
+                        <!-- Gimbal Joint: BT -->
+                        <joint name="BT_x" type="hinge" damping="0.1" axis="1 0 0"/>
+                        <joint name="BT_z" type="hinge" damping="0.1" axis="0 0 1"/>
+                        <joint name="BT_y" type="hinge" damping="0.1" axis="0 1 0"/>
+
+                        <!-- Geometrie: TorsoKIT -->
+                        <geom type="mesh" mesh="Torso_KIT_solid" rgba="0 0.6 0.6 1" contype="0" conaffinity="0"/>
+
+                        <!-- Collar-Transformation -->
+                        
+                        <body name="collar_frame" pos="0 0 0.188">
+                            <!-- Geometrie: TorsoCollar -->
+                            <geom type="mesh" mesh="torso_collar" rgba="1 0.6 0.4 1" contype="0" conaffinity="0"/>
+
+
+                            <!-- Linker Arm (abzweigend von TorsoCollar) -->
+                            <body name="lsc_segment" pos="-0.087 0 0">
+                                <!-- Gimbal Joint: LSC -->
+                                <joint name="LSC_x" type="hinge" axis="1 0 0" damping="0.1"/>
+                                <joint name="LSC_z" type="hinge" axis="0 0 1" damping="0.1"/>
+                                <joint name="LSC_y" type="hinge" axis="0 1 0" damping="0.1"/>
+                                <geom name="lsc_segment_dummy_mass" type="box" size=".02 .02 .01" rgba=".5 .5 .5 1" contype="0" conaffinity="0"/>
+
+                                <body name="ls_segment" pos="-0.023 0 0">
+                                    <geom type="mesh" mesh="leftshoulder_ls" rgba="0.4 0.6 1 1" contype="0" conaffinity="0"/>
+                                    <body>
+                                        <!-- Gimbal Joint: LS -->
+                                        <joint name="LS_x" type="hinge" axis="1 0 0" damping="0.1"/>
+                                        <joint name="LS_z" type="hinge" axis="0 0 1" damping="0.1"/>
+                                        <joint name="LS_y" type="hinge" axis="0 1 0" damping="0.1"/>
+
+                                        <body name="le_segment" pos="0 0 -0.151">
+                                            <geom type="mesh" mesh="lesegment" rgba="0.4 0.6 1 1" contype="0" conaffinity="0"/>
+                                            <body>
+                                                <!-- Gimbal Joint: LE -->
+                                                <joint name="LE_x" type="hinge" axis="1 0 0" damping="0.1"/>
+                                                <joint name="LE_z" type="hinge" axis="0 0 1" damping="0.1"/>
+                                                <joint name="LE_y" type="hinge" axis="0 1 0" damping="0.1"/>
+
+                                                <body name="lw_segment" pos="0 0 -0.129">
+                                                    <geom type="mesh" mesh="lwsegment" rgba="0.4 0.6 1 1" contype="0" conaffinity="0"/>
+                                                    <body>
+
+                                                        <!-- Gimbal Joint: LW -->
+                                                        <joint name="LW_x" type="hinge" axis="1 0 0" damping="0.1"/>
+                                                        <joint name="LW_z" type="hinge" axis="0 0 1" damping="0.1"/>
+                                                        <joint name="LW_y" type="hinge" axis="0 1 0" damping="0.1"/>
+
+                                                        <geom type="mesh" mesh="lefthand_solid" rgba="0.4 0.6 1 1" contype="0" conaffinity="0"/>
+                                                    </body>
+                                                </body>
+                                            </body>
+                                        </body>
+                                    </body>
+                                </body>
+                            </body>
+
+                            <!-- Rechter Arm (abzweigend von TorsoCollar) -->
+                            <body name="rsc_segment" pos="0.087 0 0">
+                            <!-- Gimbal Joint: RSC -->
+                            <joint name="RSC_x" type="hinge" axis="1 0 0" damping="0.1"/>
+                            <joint name="RSC_z" type="hinge" axis="0 0 1" damping="0.1"/>
+                            <joint name="RSC_y" type="hinge" axis="0 1 0" damping="0.1"/>
+                            <geom name="rsc_segment_dummy_mass" type="box" size=".02 .02 .01" rgba=".5 .5 .5 1" contype="0" conaffinity="0"/>
+
+                            <body name="rs_segment" pos="0.023 0 0">
+                                <geom type="mesh" mesh="rightshoulder_rs" rgba="0.6 0.4 0.4 1" contype="0" conaffinity="0"/>
+                                <body>
+                                <!-- Gimbal Joint: RS -->
+                                <joint name="RS_x" type="hinge" axis="1 0 0" damping="0.1"/>
+                                <joint name="RS_z" type="hinge" axis="0 0 1" damping="0.1"/>
+                                <joint name="RS_y" type="hinge" axis="0 1 0" damping="0.1"/>
+
+                                <body name="re_segment" pos="0 0 -0.151">
+                                    <geom type="mesh" mesh="lesegment" rgba="0.6 0.4 0.4 1" contype="0" conaffinity="0"/>
+                                    <body>
+                                    <!-- Gimbal Joint: RE -->
+                                    <joint name="RE_x" type="hinge" axis="1 0 0" damping="0.1"/>
+                                    <joint name="RE_z" type="hinge" axis="0 0 1" damping="0.1"/>
+                                    <joint name="RE_y" type="hinge" axis="0 1 0" damping="0.1"/>
+
+                                    <body name="rw_segment" pos="0 0 -0.129">
+                                        <geom type="mesh" mesh="lwsegment" rgba="0.6 0.4 0.4 1" contype="0" conaffinity="0"/>
+                                        <body>
+                                        <!-- Gimbal Joint: RW -->
+                                        <joint name="RW_x" type="hinge" axis="1 0 0" damping="0.1"/>
+                                        <joint name="RW_z" type="hinge" axis="0 0 1" damping="0.1"/>
+                                        <joint name="RW_y" type="hinge" axis="0 1 0" damping="0.1"/>
+
+                                        <geom type="mesh" mesh="RightHand_solid" rgba="0.6 0.4 0.4 1" contype="0" conaffinity="0"/>
+                                        </body>
+                                    </body>
+                                    </body>
+                                </body>
+                                </body>
+                            </body>
+                            </body>
+
+
+                            <!-- Kopf -->
+                            <!-- Gimbal Joint: BLN -->
+                            <body name="bln_joint_body" pos="0 0 0.022">
+                                <joint name="BLN_x" type="hinge" damping="0.1" axis="1 0 0"/>
+                                <joint name="BLN_z" type="hinge" damping="0.1" axis="0 0 1"/>
+                                <joint name="BLN_y" type="hinge" damping="0.1" axis="0 1 0"/>
+
+                                <!-- Geometrie: NeckBUN -->
+                                <body name="bun_segment" pos="0 0 0.03">
+                                    <geom type="mesh" mesh="neck_bun" rgba="1 0.6 0.4 1" contype="0" conaffinity="0"/>
+
+                                    <!-- Gimbal Joint: BUN -->
+                                    <body name="BUN_joint_body">
+                                        <joint name="BUN_x" type="hinge" damping="0.1" axis="1 0 0" />
+                                        <joint name="BUN_z" type="hinge" damping="0.1" axis="0 0 1"/>
+                                        <joint name="BUN_y" type="hinge" damping="0.1" axis="0 1 0"/>
+
+                                        <!-- Augen -->
+                                        <geom type="mesh" mesh="eyes_mm" rgba="1 0.6 0.4 1" contype="0" conaffinity="0"/>
+
+                                        <!-- Kopf -->
+                                        <body name="head_segment" pos="0 0 0.13">
+                                            <geom type="mesh" mesh="head_headjoint" rgba="1 0.6 0.4 1" contype="0" conaffinity="0"/>
+                                        </body>
+                                    </body>
+                                </body>
+                            </body>
+                        </body>
+                    </body>
+                </body>
+            </body>
+        </body>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <!-- cart Joint:  -->
+    <position  name="cart_x" joint="cart_x" ctrlrange="-1 1"  kp="200"/>
+    <position  name="cart_y" joint="cart_y" ctrlrange="-1 1"  kp="200"/>
+    <position  name="cart_z" joint="cart_z" ctrlrange="-1 1"  kp="200"/>
+
+    <!-- Gimbal Joint: gimbal -->
+    <position  name="gimbal_x" joint="gimbal_x" ctrlrange="-1 1"  kp="100"/>
+    <position  name="gimbal_y" joint="gimbal_y" ctrlrange="-1 1"  kp="100"/>
+    <position  name="gimbal_z" joint="gimbal_z" ctrlrange="-1 1"  kp="100"/>
+
+    <!-- Gimbal Joint: BP -->
+    <position  name="BP_x" joint="BP_x" ctrlrange="-1 1"  kp="100"/>
+    <position  name="BP_y" joint="BP_z" ctrlrange="-1 1"  kp="100"/>
+    <position  name="BP_z" joint="BP_y" ctrlrange="-1 1"  kp="100"/>
+
+    <!-- Gimbal Joint: BT -->
+    <position  name="BT_x" joint="BT_x" ctrlrange="-1 1"  kp="100"/>
+    <position  name="BT_y" joint="BT_z" ctrlrange="-1 1"  kp="100"/>
+    <position  name="BT_z" joint="BT_y" ctrlrange="-1 1"  kp="100"/>
+
+    <!-- Gimbal Joint: BLN -->
+    <position  name="BLN_x" joint="BLN_x" ctrlrange="-1 1"  kp="10"/>
+    <position  name="BLN_y" joint="BLN_z" ctrlrange="-1 1"  kp="10"/>
+    <position  name="BLN_z" joint="BLN_y" ctrlrange="-1 1"  kp="10"/>
+
+    <!-- Gimbal Joint: BUN -->
+    <position  name="BUN_x" joint="BUN_x" ctrlrange="-1 1"  kp="10"/>
+    <position  name="BUN_y" joint="BUN_z" ctrlrange="-1 1"  kp="10"/>
+    <position  name="BUN_z" joint="BUN_y" ctrlrange="-1 1"  kp="10"/>
+
+        <!-- Gimbal Joint: LSC -->
+    <position name="LSC_x" joint="LSC_x" ctrlrange="-1 1" kp="10"/>
+    <position name="LSC_z" joint="LSC_z" ctrlrange="-1 1" kp="10"/>
+    <position name="LSC_y" joint="LSC_y" ctrlrange="-1 1" kp="10"/>
+
+    <!-- Gimbal Joint: LS -->
+    <position name="LS_x" joint="LS_x" ctrlrange="-1 1" kp="10"/>
+    <position name="LS_z" joint="LS_z" ctrlrange="-1 1" kp="10"/>
+    <position name="LS_y" joint="LS_y" ctrlrange="-1 1" kp="10"/>
+
+    <!-- Gimbal Joint: LE -->
+    <position name="LE_x" joint="LE_x" ctrlrange="-1 1" kp="10"/>
+    <position name="LE_z" joint="LE_z" ctrlrange="-1 1" kp="10"/>
+    <position name="LE_y" joint="LE_y" ctrlrange="-1 1" kp="10"/>
+
+    <!-- Gimbal Joint: LW -->
+    <position name="LW_x" joint="LW_x" ctrlrange="-1 1" kp="10"/>
+    <position name="LW_z" joint="LW_z" ctrlrange="-1 1" kp="10"/>
+    <position name="LW_y" joint="LW_y" ctrlrange="-1 1" kp="10"/>
+
+    <!-- Gimbal Joint: LH (Hüfte links) -->
+    <position name="LH_x" joint="LH_x" ctrlrange="-1 1" kp="50"/>
+    <position name="LH_z" joint="LH_z" ctrlrange="-1 1" kp="50"/>
+    <position name="LH_y" joint="LH_y" ctrlrange="-1 1" kp="50"/>
+
+    <!-- Gimbal Joint: LK (Knie links) -->
+    <position name="LK_x" joint="LK_x" ctrlrange="-1 1" kp="50"/>
+    <position name="LK_z" joint="LK_z" ctrlrange="-1 1" kp="50"/>
+    <position name="LK_y" joint="LK_y" ctrlrange="-1 1" kp="50"/>
+
+    <!-- Gimbal Joint: LA (Sprunggelenk/Fuß links) -->
+    <position name="LA_x" joint="LA_x" ctrlrange="-1 1" kp="30"/>
+    <position name="LA_z" joint="LA_z" ctrlrange="-1 1" kp="30"/>
+    <position name="LA_y" joint="LA_y" ctrlrange="-1 1" kp="30"/>
+
+</actuator>
+</mujoco>
+

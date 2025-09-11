@@ -15,6 +15,7 @@ import hearing
 import gui_face
 import threading
 import time
+import config
 
 print("Starte das Programm...")
 #VISION = False
@@ -26,7 +27,7 @@ print("Starte das Programm...")
 last_question= hearing.question
 answer_text="The answer will be displayed here!"
 emotion = "neutral"
-hearing.question = "System: Du wurdest gerade angeschaltet."
+hearing.question = config.first_message
 
 
 
@@ -71,7 +72,7 @@ try:
             gui_face.emotion=emotion
             #say the answer
             talktime=speech.say(answer_text)
-            
+            print ("Calculated time for talking:",talktime)
              #set talking time
             gui_face.start_talking(talktime)
 

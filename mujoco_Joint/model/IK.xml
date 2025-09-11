@@ -1,0 +1,527 @@
+<mujoco>
+
+<!-- 
+Seilanker-Positionen (Sites) für ein Rolling-Contact-Gelenk
+Radius: 20.5 mm = 0.0205 m
+Z-Offset: -0.023 (Start), 0.0 (Ende)
+
+Berechnung (im XY-Kreis, um Z):
+x = R * cos(theta)
+y = R * sin(theta)
+Alle Winkel in Grad → Radiant: θ [rad] = θ [deg] * π / 180
+
+Tendon-X Start:
+-25° → x =  0.0186   y = -0.0087   z = -0.023  (gripper)
+-15° → x =  0.0198   y = -0.0053   z = -0.023  
+ -5° → x =  0.0204   y = -0.0018   z = -0.023  
+ +5° → x =  0.0204   y =  0.0018   z = -0.023  
++15° → x =  0.0198   y =  0.0053   z = -0.023  
+
+Tendon-Y Start:
++75°  → x =  0.0053   y =  0.0198   z = -0.023  
++85°  → x =  0.0018   y =  0.0204   z = -0.023  
++95°  → x = -0.0018   y =  0.0204   z = -0.023  
++105° → x = -0.0053   y =  0.0198   z = -0.023  
+
+site_gri = '0.0186 0.0087'
+site_x_1 = '0.0198 -0.0053'
+site_x_2 = '0.0204 -0.0018'
+site_x_3 = '0.0204  0.0018'
+site_x_4 = '0.0198  0.0053'
+site_y_1 = ' 0.0053  0.0198'
+site_y_2 = ' 0.0018  0.0204'
+site_y_3 = ' -0.0018 0.0204'
+site_y_4 = ' -0.0053 0.0198'
+
+
+-->
+
+<!--
+Tendon-Längen in Ausgangsstellung (Gelenkwinkel = 0)
+
+Diese Seile enden auf unterschiedlichen Ebenen im Arm, je nach Routing-Tiefe.
+Jedes Gelenk hat eine Länge von 46 mm.
+Abstände:
+  Schulter     → Ellenbogen1     = 107 mm
+  Ellenbogen1  → Ellenbogen2     = 31 mm
+  Ellenbogen2  → Handgelenk      = 107 mm
+
+Tendon-Gruppen:
+1. Seil → Schulter           = 0.046 m
+2. Seil → Ellenbogen 1       = 0.199 m
+3. Seil → Ellenbogen 2       = 0.276 m
+4. Seil → Handgelenk         = 0.429 m
+5. Seil → Hand (geschätzt)   = 0.479 m
+-->
+
+<!-- Default-Parameter für Geometrien -->
+<default>
+    <geom density="300"/>
+</default>
+
+<!-- Simulationsoptionen -->
+<option gravity="0 0 0"/>
+<!-- <option timestep="0.001" integrator="RK4"/> -->
+
+<!-- Compiler- und Asset-Einstellungen -->
+<compiler angle="radian" meshdir="." autolimits="true"/>
+<asset>
+    <!-- Optional: STL-Modelle hier einfügen -->
+</asset>
+
+
+<worldbody>
+
+    <!-- Lichtquelle -->
+    <light directional="true" pos="-0.5 0.5 3" dir="0 0 -1" />
+
+    <!-- Boden (Tischplatte) -->
+    <geom name="table" type="plane" pos="0 0 0" size="1 1 1" rgba="1 0.83 0.61 0.5"/>
+
+    <!-- Orientierungshilfen (Achsen) -->
+    <geom name="x-axis" type="box" size="0.04 0.01 0.01" rgba="1 0 0 1" contype="0" conaffinity="0"/>
+    <geom name="y-axis" type="box" size="0.01 0.04 0.01" rgba="0 1 0 1" contype="0" conaffinity="0"/>
+    <geom name="z-axis" type="box" size="0.01 0.01 0.04" rgba="0 0 1 1" contype="0" conaffinity="0"/>
+
+    <!-- ROBOT Körper -->
+    <geom name="robot" type="box" size="0.05 0.1 0.2" pos="0 0.11 0.2" rgba="0.5 0.5 0.5 1" contype="0" conaffinity="0"/>
+
+    <!-- ROBOT Kopf -->
+    <geom name="head" type="box" size="0.05 0.04 0.07" pos="0 0.11 0.5" rgba="0.5 0.5 0.5 1" contype="0" conaffinity="0"/>
+
+    <!-- ROBOT Augen -->
+    <geom name="eye_left"  type="sphere" size="0.01" pos="0.05 0.09 0.5" rgba="1 1 1 1" contype="0" conaffinity="0"/>
+    <geom name="eye_right" type="sphere" size="0.01" pos="0.05 0.13 0.5" rgba="1 1 1 1" contype="0" conaffinity="0"/>
+
+	<!-- Rotate 90° around X axis and place the arm 40 cm above table surface -->
+	<body name="arm_base" pos="0 0 0.4" euler="1.5708 0 0">
+		<geom name="arm_base_geom" type="box" size="0.02 0.02 0.01" rgba="0.5 0.5 0.5 1" contype="0" conaffinity="0"/>
+
+		<!-- Arm rotation around Z axis -->
+		<body name="arm_rot" pos="0 0 0">
+			<joint name="arm_z_joint" type="hinge" axis="0 0 1" pos="0 0 0" damping="0.01" range="-3.14 3.14"/>
+
+			<!-- Base of shoulder joint after arm rotation-->
+			<body name="shoulder_base" pos="0 0 0">
+				<geom name="shoulder_base_geom" type="box" size="0.02 0.02 0.01" rgba="0.5 0.5 0.5 1" contype="0" conaffinity="0"/>
+
+				<!-- Shoulder frame with tendon anchors -->
+				<body name="shoulder_frame" pos="0 0 0.04">
+					<geom name="shoulder_frame_x" type="box" size="0.003" fromto="-.035 0 -.023 .035 0 -.023" rgba="0 0 1 1" contype="0" conaffinity="0"/>
+					<geom name="shoulder_frame_y" type="box" size="0.003" fromto="0 -.035 -.023 0 .035 -.023" rgba="0 0 1 1" contype="0" conaffinity="0"/>
+
+					<!-- Tendon anchors (8 starts + 1 gripper) -->
+					<site name="sh_tendon_gripper"        pos=" -0.0186 -0.0087  -0.023" size="0.005 "/>
+					<site name="sh_tendon_x_start_1"      pos=" 0.0204 -0.0018  -0.023" size="0.005 "/>
+					<site name="sh_tendon_x_start_2"      pos=" 0.0198 -0.0053  -0.023" size="0.005 "/>
+					<site name="sh_tendon_x_start_3"      pos=" 0.0204  0.0018  -0.023" size="0.005 "/>
+					<site name="sh_tendon_x_start_4"      pos=" 0.0198  0.0053  -0.023" size="0.005 "/>
+					<site name="sh_tendon_y_start_1"      pos=" 0.0018  0.0204  -0.023" size="0.005 "/>
+					<site name="sh_tendon_y_start_2"      pos=" 0.0053  0.0198  -0.023" size="0.005 "/>
+					<site name="sh_tendon_y_start_3"      pos=" -0.0018 0.0204  -0.023" size="0.005 "/>
+					<site name="sh_tendon_y_start_4"      pos=" -0.0053 0.0198  -0.023" size="0.005 "/>
+
+
+                    <body name="shoulder_xjoint1" pos="0 0 0">
+                        <geom name="shoulder_xjoint1" type="box" size=".005" fromto="-.02 0 -.023 .02 0 -.023" rgba="1 0 0 1" contype="0" conaffinity="0"/>
+                        <joint name="shoulder_xjoint1" type="hinge" axis="1 0 0" pos="0 0 -.023" damping="0.02" range="-0.7854 0.7854"/>
+
+                        <body name="shoulder_yjoint1" pos="0 0 0">
+                            <geom name="shoulder_connector" type="box" size=".003" fromto="0 0 -.023 0 0 .023" rgba=".5 .5 .5 1" contype="0" conaffinity="0"/>
+                            <geom name="shoulder_yjoint1" type="box" size=".006" fromto="0 0.02 -.023 0 -0.02 -.023" rgba="0 1 0 1" contype="0" conaffinity="0"/>
+                            <joint name="shoulder_yjoint1" type="hinge" axis="0 1 0" pos="0 0 -.023" damping="0.02" range="-0.7854 0.7854"/>
+
+                            <geom name="shoulder_yjoint2" type="box" size=".006" fromto="0 0.02 .023 0 -0.02 .023" rgba="0 1 0 1" contype="0" conaffinity="0"/>
+                            <body name="shoulder_yjoint2" pos="0 0 0">
+                                <joint name="shoulder_yjoint2" type="hinge" axis="0 1 0" pos="0 0 .023" damping="0.02" range="-0.7854 0.7854"/>
+
+                                <geom name="shoulder_xjoint2" type="box" size=".005" fromto="-.02 0 .023 .02 0 .023" rgba="1 0 0 1" contype="0" conaffinity="0"/>
+                                <body name="shoulder_end" pos="0 0 .023">
+                                    <geom name="shoulder_box" type="box" size=".01 .01 .01" rgba="1 1 1 .3" contype="0" conaffinity="0" mass="0"/>
+                                    <joint name="shoulder_xjoint2" type="hinge" axis="1 0 0" pos="0 0 0" damping="0.02" range="-0.7854 0.7854"/>
+                                    <geom name="endframex" type="box" size=".003" fromto="-.035 0 0 .035 0 0" rgba="0 0 1 1" contype="0" conaffinity="0"/>
+                                    <geom name="endframey" type="box" size=".003" fromto="0 -.035 0 0 .035 0" rgba="0 0 1 1" contype="0" conaffinity="0"/>
+                                    <!-- Seilanker (8 Endpunkte + 1* gripper) -->
+                                    <site name="sh_tendon_gripper_end"     pos=" -0.0186 -0.0087  0.0" size="0.005"/>
+                                    <site name="sh_tendon_x_end_1"         pos=" 0.0204 -0.0018  0.0" size="0.005"/>
+                                    <site name="sh_tendon_x_end_2"         pos=" 0.0198 -0.0053  0.0" size="0.005"/>
+                                    <site name="sh_tendon_x_end_3"         pos=" 0.0204  0.0018  0.0" size="0.005"/>
+                                    <site name="sh_tendon_x_end_4"         pos=" 0.0198  0.0053  0.0" size="0.005"/>
+                                    <site name="sh_tendon_y_end_1"         pos=" 0.0018  0.0204  0.0" size="0.005"/>
+                                    <site name="sh_tendon_y_end_2"         pos=" 0.0053  0.0198  0.0" size="0.005"/>
+                                    <site name="sh_tendon_y_end_3"         pos=" -0.0018 0.0204  0.0" size="0.005"/>
+                                    <site name="sh_tendon_y_end_4"         pos=" -0.0053 0.0198  0.0" size="0.005"/>
+
+
+                                    <!-- Connector between shoulder and elbow -->
+                                    <geom name="link_shoulder_elbow1" type="capsule" fromto="0 0 0 0 0 0.107" size="0.01" rgba="0.5 0.5 0.5 1" contype="0" conaffinity="0"/>
+
+                                    <!-- ELBOW JOINT 1 -->
+                                    <body name="elbow1base" pos="0 0 0.13"> <!-- 0.107 + 0.023 = 0.13 -->
+                                        <geom name="elbow1framex" type="box" size=".003" fromto="-.035 0 -.023 .035 0 -.023" rgba="0 0 1 1" contype="0" conaffinity="0"/>
+                                        <geom name="elbow1framey" type="box" size=".003" fromto="0 -.035 -.023 0 .035 -.023" rgba="0 0 1 1" contype="0" conaffinity="0"/>
+                                        <!-- Seilanker el1 (8 Startpunkte + 1* gripper) -->
+                                        <site name="el1_tendon_gripper"     pos=" -0.0186 -0.0087  -0.023" size="0.005 "/>
+                                        <site name="el1_tendon_x_start_1"   pos=" 0.0204 -0.0018  -0.023" size="0.005 "/>
+                                        <site name="el1_tendon_x_start_2"   pos=" 0.0198 -0.0053  -0.023" size="0.005 "/>
+                                        <site name="el1_tendon_x_start_3"   pos=" 0.0204  0.0018  -0.023" size="0.005 "/>
+                                        <site name="el1_tendon_x_start_4"   pos=" 0.0198  0.0053  -0.023" size="0.005 "/>
+                                        <site name="el1_tendon_y_start_1"   pos=" 0.0018  0.0204  -0.023" size="0.005 "/>
+                                        <site name="el1_tendon_y_start_2"   pos=" 0.0053  0.0198  -0.023" size="0.005 "/>
+                                        <site name="el1_tendon_y_start_3"   pos=" -0.0018 0.0204  -0.023" size="0.005 "/>
+                                        <site name="el1_tendon_y_start_4"   pos=" -0.0053 0.0198  -0.023" size="0.005 "/>
+
+                                        <body name="elbow1_xjoint1" pos="0 0 0">
+                                            <geom name="elbow1_xjoint1" type="box" size=".005" fromto="-.02 0 -.023 .02 0 -.023" rgba="1 0 0 1" contype="0" conaffinity="0"/>
+                                            <joint name="elbow1_xjoint1" type="hinge" axis="1 0 0" pos="0 0 -.023" damping="0.02" range="-0.7854 0.7854" />
+                                            <body name="elbow1_yjoint1" pos="0 0 0">
+                                                <geom name="elbow1_connector" type="box" size=".003" fromto="0 0 -.023 0 0 .023" rgba=".5 .5 .5 1" contype="0" conaffinity="0"/>
+                                                <geom name="elbow1_yjoint1" type="box" size=".006" fromto="0 0.02 -.023 0 -0.02 -.023" rgba="0 1 0 1" contype="0" conaffinity="0"/>
+                                                <joint name="elbow1_yjoint1" type="hinge" axis="0 1 0" pos="0 0 -.023" damping="0.02" range="-0.7854 0.7854"/>
+                                                <geom name="elbow1_yjoint2" type="box" size=".006" fromto="0 0.02 .023 0 -0.02 .023" rgba="0 1 0 1" contype="0" conaffinity="0"/>
+                                                <body name="elbow1_yjoint2" pos="0 0 0">
+                                                    <joint name="elbow1_yjoint2" type="hinge" axis="0 1 0" pos="0 0 .023" damping="0.02" range="-0.7854 0.7854"/>
+                                                    <geom name="elbow1_xjoint2" type="box" size=".005" fromto="-.02 0 .023 .02 0 .023" rgba="1 0 0 1" contype="0" conaffinity="0"/>
+                                                    <body name="elbow1_end" pos="0 0 .023">
+                                                        <geom name="elbow1_box" type="box" size=".01 .01 .01" rgba="1 1 1 .3" contype="0" conaffinity="0" mass="0"/>
+                                                        <joint name="elbow1_xjoint2" type="hinge" axis="1 0 0" pos="0 0 0" damping="0.02" range="-0.7854 0.7854"/>
+                                                        <geom name="elbow1framex_end" type="box" size=".003" fromto="-.035 0 0 .035 0 0" rgba="0 0 1 1" contype="0" conaffinity="0"/>
+                                                        <geom name="elbow1framey_end" type="box" size=".003" fromto="0 -.035 0 0 .035 0" rgba="0 0 1 1" contype="0" conaffinity="0"/>
+                                                        <!-- Seilanker el1 (8 Endpunkte + 1* gripper) -->
+                                                        <site name="el1_tendon_gripper_end"     pos=" -0.0186 -0.0087  0.0" size="0.005"/>
+                                                        <site name="el1_tendon_x_end_1"         pos=" 0.0204 -0.0018  0.0" size="0.005"/>
+                                                        <site name="el1_tendon_x_end_2"         pos=" 0.0198 -0.0053  0.0" size="0.005"/>
+                                                        <site name="el1_tendon_x_end_3"         pos=" 0.0204  0.0018  0.0" size="0.005"/>
+                                                        <site name="el1_tendon_x_end_4"         pos=" 0.0198  0.0053  0.0" size="0.005"/>
+                                                        <site name="el1_tendon_y_end_1"         pos=" 0.0018  0.0204  0.0" size="0.005"/>
+                                                        <site name="el1_tendon_y_end_2"         pos=" 0.0053  0.0198  0.0" size="0.005"/>
+                                                        <site name="el1_tendon_y_end_3"         pos=" -0.0018 0.0204  0.0" size="0.005"/>
+                                                        <site name="el1_tendon_y_end_4"         pos=" -0.0053 0.0198  0.0" size="0.005"/>
+
+                                                        <!--Connector between elbow1 and elbow2-->
+                                                        <geom name="link_elbow1_elbow2" type="capsule" fromto="0 0 0 0 0 0.031" size="0.01" rgba="0.5 0.5 0.5 1" contype="0" conaffinity="0"/>
+                                                        <site  name="elbow_site" pos="0 0 0.0155" size="0.01" rgba="0 1 1 1"/>
+                                                        <!-- ELBOW JOINT 2 -->
+                                                        <body name="elbow2base" pos="0 0 0.054"> <!-- 0.031+ 0.023 = 0.054 -->
+                                                            <geom name="elbow2framex" type="box" size=".003" fromto="-.035 0 -.023 .035 0 -.023" rgba="0 0 1 1" contype="0" conaffinity="0"/>
+                                                            <geom name="elbow2framey" type="box" size=".003" fromto="0 -.035 -.023 0 .035 -.023" rgba="0 0 1 1" contype="0" conaffinity="0"/>
+                                                            <!-- Seilanker el2 (8 Startpunkte + 1* gripper) -->
+                                                            <site name="el2_tendon_gripper"     pos=" -0.0186 -0.0087  -0.023" size="0.005 "/>
+                                                            <site name="el2_tendon_x_start_1"   pos=" 0.0204 -0.0018  -0.023" size="0.005 "/>
+                                                            <site name="el2_tendon_x_start_2"   pos=" 0.0198 -0.0053  -0.023" size="0.005 "/>
+                                                            <site name="el2_tendon_x_start_3"   pos=" 0.0204  0.0018  -0.023" size="0.005 "/>
+                                                            <site name="el2_tendon_x_start_4"   pos=" 0.0198  0.0053  -0.023" size="0.005 "/>
+                                                            <site name="el2_tendon_y_start_1"   pos=" 0.0018  0.0204  -0.023" size="0.005 "/>
+                                                            <site name="el2_tendon_y_start_2"   pos=" 0.0053  0.0198  -0.023" size="0.005 "/>
+                                                            <site name="el2_tendon_y_start_3"   pos=" -0.0018 0.0204  -0.023" size="0.005 "/>
+                                                            <site name="el2_tendon_y_start_4"   pos=" -0.0053 0.0198  -0.023" size="0.005 "/>
+
+
+                                                            <body name="elbow2_xjoint1" pos="0 0 0">
+                                                                <geom name="elbow2_xjoint1" type="box" size=".005" fromto="-.02 0 -.023 .02 0 -.023" rgba="1 0 0 1" contype="0" conaffinity="0"/>
+                                                                <joint name="elbow2_xjoint1" type="hinge" axis="1 0 0" pos="0 0 -.023" damping="0.02" range="-0.7854 0.7854"/>
+                                                                <body name="elbow2_yjoint1" pos="0 0 0">
+                                                                    <geom name="elbow2_connector" type="box" size=".003" fromto="0 0 -.023 0 0 .023" rgba=".5 .5 .5 1" contype="0" conaffinity="0"/>
+                                                                    <geom name="elbow2_yjoint1" type="box" size=".006" fromto="0 0.02 -.023 0 -0.02 -.023" rgba="0 1 0 1" contype="0" conaffinity="0"/>
+                                                                    <joint name="elbow2_yjoint1" type="hinge" axis="0 1 0" pos="0 0 -.023" damping="0.02" range="-0.7854 0.7854"/>
+                                                                    <geom name="elbow2_yjoint2" type="box" size=".006" fromto="0 0.02 .023 0 -0.02 .023" rgba="0 1 0 1" contype="0" conaffinity="0"/>
+                                                                    <body name="elbow2_yjoint2" pos="0 0 0">
+                                                                        <joint name="elbow2_yjoint2" type="hinge" axis="0 1 0" pos="0 0 .023" damping="0.02" range="-0.7854 0.7854"/>
+                                                                        <geom name="elbow2_xjoint2" type="box" size=".005" fromto="-.02 0 .023 .02 0 .023" rgba="1 0 0 1" contype="0" conaffinity="0"/>
+                                                                        <body name="elbow2_end" pos="0 0 .023">
+                                                                            <geom name="elbow2_box" type="box" size=".01 .01 .01" rgba="1 1 1 .3" contype="0" conaffinity="0" mass="0"/>
+                                                                            <joint name="elbow2_xjoint2" type="hinge" axis="1 0 0" pos="0 0 0" damping="0.02" range="-0.7854 0.7854"/>
+                                                                            <geom name="elbow2framex_end" type="box" size=".003" fromto="-.035 0 0 .035 0 0" rgba="0 0 1 1" contype="0" conaffinity="0"/>
+                                                                            <geom name="elbow2framey_end" type="box" size=".003" fromto="0 -.035 0 0 .035 0" rgba="0 0 1 1" contype="0" conaffinity="0"/>
+                                                                            <!-- Seilanker el2 (8 Endpunkte + 1* gripper) -->
+                                                                            <site name="el2_tendon_gripper_end"     pos=" -0.0186 -0.0087  0.0" size="0.005"/>
+                                                                            <site name="el2_tendon_x_end_1"         pos=" 0.0204 -0.0018  0.0" size="0.005"/>
+                                                                            <site name="el2_tendon_x_end_2"         pos=" 0.0198 -0.0053  0.0" size="0.005"/>
+                                                                            <site name="el2_tendon_x_end_3"         pos=" 0.0204  0.0018  0.0" size="0.005"/>
+                                                                            <site name="el2_tendon_x_end_4"         pos=" 0.0198  0.0053  0.0" size="0.005"/>
+                                                                            <site name="el2_tendon_y_end_1"         pos=" 0.0018  0.0204  0.0" size="0.005"/>
+                                                                            <site name="el2_tendon_y_end_2"         pos=" 0.0053  0.0198  0.0" size="0.005"/>
+                                                                            <site name="el2_tendon_y_end_3"         pos=" -0.0018 0.0204  0.0" size="0.005"/>
+                                                                            <site name="el2_tendon_y_end_4"         pos=" -0.0053 0.0198  0.0" size="0.005"/>
+
+
+                                                                            <!--Connector between elbow2 and wrist-->
+                                                                            <geom name="link_elbow2_wrist" type="capsule" fromto="0 0 0 0 0 0.107" size="0.01" rgba="0.5 0.5 0.5 1" contype="0" conaffinity="0"/>
+
+                                                                            <!-- WRIST JOINT -->
+
+                                                                            <body name="wristbase" pos="0 0 0.13"> <!-- 0.107 + 0.023 = 0.13 -->
+                                                                                <geom name="wristframex" type="box" size=".003" fromto="-.035 0 -.023 .035 0 -.023" rgba="0 0 1 1" contype="0" conaffinity="0"/>
+                                                                                <geom name="wristframey" type="box" size=".003" fromto="0 -.035 -.023 0 .035 -.023" rgba="0 0 1 1" contype="0" conaffinity="0"/>
+                                                                            <!-- Seilanker wr (8 Startpunkte + 1* gripper) -->
+                                                                            <site name="wr_tendon_gripper"     pos=" -0.0186 -0.0087  -0.023" size="0.005 "/>
+                                                                            <site name="wr_tendon_x_start_1"   pos=" 0.0204 -0.0018  -0.023" size="0.005 "/>
+                                                                            <site name="wr_tendon_x_start_2"   pos=" 0.0198 -0.0053  -0.023" size="0.005 "/>
+                                                                            <site name="wr_tendon_x_start_3"   pos=" 0.0204  0.0018  -0.023" size="0.005 "/>
+                                                                            <site name="wr_tendon_x_start_4"   pos=" 0.0198  0.0053  -0.023" size="0.005 "/>
+                                                                            <site name="wr_tendon_y_start_1"   pos=" 0.0018  0.0204  -0.023" size="0.005 "/>
+                                                                            <site name="wr_tendon_y_start_2"   pos=" 0.0053  0.0198  -0.023" size="0.005 "/>
+                                                                            <site name="wr_tendon_y_start_3"   pos=" -0.0018 0.0204  -0.023" size="0.005 "/>
+                                                                            <site name="wr_tendon_y_start_4"   pos=" -0.0053 0.0198  -0.023" size="0.005 "/>
+
+
+                                                                                <body name="wrist_xjoint1" pos="0 0 0">
+                                                                                    <geom name="wrist_xjoint1" type="box" size=".005" fromto="-.02 0 -.023 .02 0 -.023" rgba="1 0 0 1" contype="0" conaffinity="0"/>
+                                                                                    <joint name="wrist_xjoint1" type="hinge" axis="1 0 0" pos="0 0 -.023" damping="0.02" range="-0.7854 0.7854"/>
+                                                                                    <body name="wrist_yjoint1" pos="0 0 0">
+                                                                                        <geom name="wrist_connector" type="box" size=".003" fromto="0 0 -.023 0 0 .023" rgba=".5 .5 .5 1" contype="0" conaffinity="0"/>
+                                                                                        <geom name="wrist_yjoint1" type="box" size=".006" fromto="0 0.02 -.023 0 -0.02 -.023" rgba="0 1 0 1" contype="0" conaffinity="0"/>
+                                                                                        <joint name="wrist_yjoint1" type="hinge" axis="0 1 0" pos="0 0 -.023" damping="0.02" range="-0.7854 0.7854"/>
+                                                                                        <geom name="wrist_yjoint2" type="box" size=".006" fromto="0 0.02 .023 0 -0.02 .023" rgba="0 1 0 1" contype="0" conaffinity="0"/>
+                                                                                        <body name="wrist_yjoint2" pos="0 0 0">
+                                                                                            <joint name="wrist_yjoint2" type="hinge" axis="0 1 0" pos="0 0 .023" damping="0.02" range="-0.7854 0.7854"/>
+                                                                                            <geom name="wrist_xjoint2" type="box" size=".005" fromto="-.02 0 .023 .02 0 .023" rgba="1 0 0 1" contype="0" conaffinity="0"/>
+                                                                                            <body name="wrist_end" pos="0 0 .023">
+                                                                                                <geom name="wrist_box" type="box" size=".01 .01 .01" rgba="1 1 1 .3" contype="0" conaffinity="0" mass="0"/>
+                                                                                                <joint name="wrist_xjoint2" type="hinge" axis="1 0 0" pos="0 0 0" damping="0.02" range="-0.7854 0.7854"/>
+                                                                                                <geom name="wristframex_end" type="box" size=".003" fromto="-.035 0 0 .035 0 0" rgba="0 0 1 1" contype="0" conaffinity="0"/>
+                                                                                                <geom name="wristframey_end" type="box" size=".003" fromto="0 -.035 0 0 .035 0" rgba="0 0 1 1" contype="0" conaffinity="0"/>
+                                                                                                <!-- Seilanker wr (8 Endpunkte + 1* gripper) -->
+                                                                                                <site name="wr_tendon_gripper_end"     pos=" -0.0186 -0.0087  0.0" size="0.005"/>
+                                                                                                <site name="wr_tendon_x_end_1"         pos=" 0.0204 -0.0018  0.0" size="0.005"/>
+                                                                                                <site name="wr_tendon_x_end_2"         pos=" 0.0198 -0.0053  0.0" size="0.005"/>
+                                                                                                <site name="wr_tendon_x_end_3"         pos=" 0.0204  0.0018  0.0" size="0.005"/>
+                                                                                                <site name="wr_tendon_x_end_4"         pos=" 0.0198  0.0053  0.0" size="0.005"/>
+                                                                                                <site name="wr_tendon_y_end_1"         pos=" 0.0018  0.0204  0.0" size="0.005"/>
+                                                                                                <site name="wr_tendon_y_end_2"         pos=" 0.0053  0.0198  0.0" size="0.005"/>
+                                                                                                <site name="wr_tendon_y_end_3"         pos=" -0.0018 0.0204  0.0" size="0.005"/>
+                                                                                                <site name="wr_tendon_y_end_4"         pos=" -0.0053 0.0198  0.0" size="0.005"/>
+
+
+                                                                                                <!--Connector between wrist and hand-->
+                                                                                                <geom name="link_wrist_hand" type="capsule" fromto="0 0 0 0 0 0.05" size="0.01" rgba="0.5 0.5 0.5 1" contype="0" conaffinity="0"/>
+                                                                                                <body name="griperrotation" euler= "0 0 -1.5708">
+                                                                                                    <geom name="gripperfix" type="box" size=".002 .01 .02" pos = "-.01 0 .03" rgba="0 1 1 1" contype="0" conaffinity="0" />
+                                                                                                    <!--gripper-->
+                                                                                                    <body name="gripper" pos="0 0 0.0">
+                                                                                                        <joint name="gripper" type="hinge" axis="0 1 0" pos="0 0 0.024" damping="0.02" range="-0.7854 0.7854"/>
+                                                                                                        <geom name="gripper" type="box" size=".002 .01 .02" pos = ".01 0 .03" rgba="0 1 1 1" contype="0" conaffinity="0"  />
+                                                                                                        <site name="gripper_site" pos="0.023 -0.018 0.023" size="0.005" rgba="0 1 1 1"/>
+                                                                                                    </body>
+                                                                                                </body>
+
+                                                                                                <!-- HAND EEF Site-->
+                                                                                                <body name="handbase" pos="0 0 0.05">
+                                                                                                    <!--<site name="hand_eef1" pos="0 0 0" size="0.005" rgba="1 0 0 1"/>
+                                                                                                    <site name="hand_eef2" pos="0 0 0.1" size="0.005" rgba="1 0 0 1"/>
+                                                                                                    <site name="hand_eef3" pos="0 0.1 0" size="0.005" rgba="1 0 0 1"/>-->
+                                                                                                    <body name="eef_body1" pos="0 0 0">
+                                                                                                        <geom name="eef_geom1" type="box" size=".01 .01 .01" rgba=".5 .5 .5 .5" contype="0" conaffinity="0"/>
+                                                                                                    </body>
+                                                                                                    <body name="eef_body2" pos="0 0.1 0 ">
+                                                                                                        <geom name="eef_geom2" type="box" size=".01 .01 .01" rgba=".5 .5 .5 .5" contype="0" conaffinity="0"/>
+                                                                                                    </body>
+                                                                                                    <body name="eef_body3" pos="0 0 0.1 ">
+                                                                                                        <geom name="eef_geom3" type="box" size=".01 .01 .01" rgba=".5 .5 .5 .5" contype="0" conaffinity="0"/>
+                                                                                                    </body>
+                                                                                                </body>
+                                                                                            </body>
+                                                                                        </body>
+                                                                                    </body>
+                                                                                </body>
+                                                                            </body>               
+                                                                        </body>
+                                                                    </body>
+                                                                </body>
+                                                            </body>
+                                                        </body>  
+                                                    </body>
+                                                </body>
+                                            </body>
+                                        </body>
+                                    </body>
+                                </body>
+                            </body>
+                        </body>
+                    </body>
+                </body>
+            </body>
+        </body>
+	</body> 
+
+	
+	
+	<!-- Optional for spring-damper inverse kinematics (can be toggled via --) -->
+	<!-- ik start -->
+	
+	<body name="elbow_target_body" pos="-.2 -0.2 0.3">
+		<joint name="elbow_target_x" type="slide" axis="1 0 0" pos="0 0 0" damping="2"/>
+		<joint name="elbow_target_y" type="slide" axis="0 1 0" pos="0 0 0" damping="2"/>
+		<joint name="elbow_target_z" type="slide" axis="0 0 1" pos="0 0 0" damping="2"/>
+        <geom name="elbow_target_geom" type="sphere" size="0.01" rgba="0 1 1 0.3" contype="0" conaffinity="0" mass="0.001"/>
+		<site name="elbow_target" pos="0 0 0" size="0.005" rgba="0 1 1 1"/>
+	</body>
+		
+		
+	<body name="target_body" pos="0 -0.496 0.4"> 
+		<joint name="target_x" type="slide" axis="1 0 0" pos="0 0 0" damping="2" />
+		<joint name="target_y" type="slide" axis="0 1 0" pos="0 0 0" damping="2" />
+		<joint name="target_z" type="slide" axis="0 0 1" pos="0 0 0" damping="2" />
+		<joint name="target_roll"  type="hinge" axis="1 0 0" pos="0 0 0" damping="0.2" range="-3.14 3.14"/>
+		<joint name="target_pitch" type="hinge" axis="0 1 0" pos="0 0 0" damping="0.2" range="-3.14 3.14"/>
+		<joint name="target_yaw"   type="hinge" axis="0 0 1" pos="0 0 0" damping="0.2" range="-3.14 3.14"/>
+
+		<body name="target_body1" pos="0 0 0"> 
+			<geom name="target_geom1" type="box" size=".02 .02 .02" rgba=".5 .5 .5 .5" contype="0" conaffinity="0"/>
+		</body>
+		<body name="target_body2" pos="0 0 0.1"> 
+			<geom name="target_geom2" type="box" size=".02 .02 .02" rgba=".5 .5 .5 .5" contype="0" conaffinity="0"/>
+		</body>
+		<body name="target_body3" pos="0 -0.1 0"> 
+			<geom name="target_geom3" type="box" size=".02 .02 .02" rgba=".5 .5 .5 .5" contype="0" conaffinity="0"/>
+		</body>
+	</body>
+	<!-- ik end -->
+	
+</worldbody>
+
+<equality>
+    <!-- Couple the sub-joints of each rolling contact pair (X and Y) -->
+    <joint joint1="shoulder_xjoint1" joint2="shoulder_xjoint2" polycoef="0 1 0 0 0" solref="0.002 0.5" solimp="0.95 0.98 0.001"/>
+    <joint joint1="shoulder_yjoint1" joint2="shoulder_yjoint2" polycoef="0 1 0 0 0" solref="0.002 0.5" solimp="0.95 0.98 0.001"/>
+    <joint joint1="elbow1_xjoint1"   joint2="elbow1_xjoint2"   polycoef="0 1 0 0 0" solref="0.002 0.5" solimp="0.95 0.98 0.001"/>
+    <joint joint1="elbow1_yjoint1"   joint2="elbow1_yjoint2"   polycoef="0 1 0 0 0" solref="0.002 0.5" solimp="0.95 0.98 0.001"/>
+    <joint joint1="elbow2_xjoint1"   joint2="elbow2_xjoint2"   polycoef="0 1 0 0 0" solref="0.002 0.5" solimp="0.95 0.98 0.001"/>
+    <joint joint1="elbow2_yjoint1"   joint2="elbow2_yjoint2"   polycoef="0 1 0 0 0" solref="0.002 0.5" solimp="0.95 0.98 0.001"/>
+    <joint joint1="wrist_xjoint1"    joint2="wrist_xjoint2"    polycoef="0 1 0 0 0" solref="0.002 0.5" solimp="0.95 0.98 0.001"/>
+    <joint joint1="wrist_yjoint1"    joint2="wrist_yjoint2"    polycoef="0 1 0 0 0" solref="0.002 0.5" solimp="0.95 0.98 0.001"/>
+
+    <!-- Coupling between elbow1 and elbow2 for IK (for forward kinematics, set values manually) -->
+    <!-- ik start -->
+    <joint joint1="elbow1_xjoint2" joint2="elbow2_xjoint1" polycoef="0 1 0 0 0" solref="0.01 1" solimp="0.95 0.98 0.001"/>
+    <joint joint1="elbow1_yjoint2" joint2="elbow2_yjoint1" polycoef="0 1 0 0 0" solref="0.01 1" solimp="0.95 0.98 0.001"/>
+	<!-- ik end -->
+
+    <!-- Weld target and end-effector (EEF) sites for inverse kinematics -->
+	<!-- ik start -->
+    <weld body1="eef_body1" body2="target_body1" solref="0.05 0.5" solimp="0.95 0.99 0.001"/>
+    <weld body1="eef_body2" body2="target_body2" solref="0.05 0.5" solimp="0.95 0.99 0.001"/>
+    <weld body1="eef_body3" body2="target_body3" solref="0.05 0.5" solimp="0.95 0.99 0.001"/>
+    <!-- ik end -->
+	
+	
+	<!-- Inverse kinematics: weld elbow target and elbow with very loose coupling -->
+	<!-- ik start -->
+	<weld body1="elbow_target_body" body2="elbow1_end" solref="2 2" solimp="0.3 0.9 0.0005"/>
+	<!-- ik end -->
+</equality>
+
+<tendon>
+    <!-- Tendon set 1: shoulder -->
+    <spatial name="tendon_x_1" width="0.001" rgba="1 .5 .5 1">
+        <site site="sh_tendon_x_start_1"/>
+        <site site="sh_tendon_x_end_1"/>
+    </spatial>
+    <spatial name="tendon_y_1" width="0.001" rgba="1 .5 .5 1">
+        <site site="sh_tendon_y_start_1"/>
+        <site site="sh_tendon_y_end_1"/>
+    </spatial>
+
+    <!-- Tendon set 2: shoulder + elbow1 -->
+    <spatial name="tendon_x_2" width="0.001" rgba=".7 1 .5 1">
+        <site site="sh_tendon_x_start_2"/>
+        <site site="sh_tendon_x_end_2"/>
+        <site site="el1_tendon_x_start_2"/>
+        <site site="el1_tendon_x_end_2"/>
+    </spatial>
+    <spatial name="tendon_y_2" width="0.001" rgba=".7 1 .5 1">
+        <site site="sh_tendon_y_start_2"/>
+        <site site="sh_tendon_y_end_2"/>
+        <site site="el1_tendon_y_start_2"/>
+        <site site="el1_tendon_y_end_2"/>
+    </spatial>
+
+    <!-- Tendon set 3: shoulder + elbow1 + elbow2 -->
+    <spatial name="tendon_x_3" width="0.001" rgba=".7 .5 1 1">
+        <site site="sh_tendon_x_start_3"/>
+        <site site="sh_tendon_x_end_3"/>
+        <site site="el1_tendon_x_start_3"/>
+        <site site="el1_tendon_x_end_3"/>
+        <site site="el2_tendon_x_start_3"/>
+        <site site="el2_tendon_x_end_3"/>
+    </spatial>
+    <spatial name="tendon_y_3" width="0.001" rgba=".7 .5 1 1">
+        <site site="sh_tendon_y_start_3"/>
+        <site site="sh_tendon_y_end_3"/>
+        <site site="el1_tendon_y_start_3"/>
+        <site site="el1_tendon_y_end_3"/>
+        <site site="el2_tendon_y_start_3"/>
+        <site site="el2_tendon_y_end_3"/>
+    </spatial>
+
+    <!-- Tendon set 4: full chain including wrist -->
+    <spatial name="tendon_x_4" width="0.001" rgba=".7 1 1 1">
+        <site site="sh_tendon_x_start_4"/>
+        <site site="sh_tendon_x_end_4"/>
+        <site site="el1_tendon_x_start_4"/>
+        <site site="el1_tendon_x_end_4"/>
+        <site site="el2_tendon_x_start_4"/>
+        <site site="el2_tendon_x_end_4"/>
+        <site site="wr_tendon_x_start_4"/>
+        <site site="wr_tendon_x_end_4"/>
+    </spatial>
+    <spatial name="tendon_y_4" width="0.001" rgba=".7 1 1 1">
+        <site site="sh_tendon_y_start_4"/>
+        <site site="sh_tendon_y_end_4"/>
+        <site site="el1_tendon_y_start_4"/>
+        <site site="el1_tendon_y_end_4"/>
+        <site site="el2_tendon_y_start_4"/>
+        <site site="el2_tendon_y_end_4"/>
+        <site site="wr_tendon_y_start_4"/>
+        <site site="wr_tendon_y_end_4"/>
+    </spatial>
+
+    <!-- Gripper tendon through entire chain -->
+    <spatial name="tendon_gripper" width="0.001" rgba=".7 .5 .5 1">
+        <site site="sh_tendon_gripper"/>
+        <site site="sh_tendon_gripper_end"/>
+        <site site="el1_tendon_gripper"/>
+        <site site="el1_tendon_gripper_end"/>
+        <site site="el2_tendon_gripper"/>
+        <site site="el2_tendon_gripper_end"/>
+        <site site="wr_tendon_gripper"/>
+        <site site="wr_tendon_gripper_end"/>
+        <site site="gripper_site"/>
+    </spatial>
+</tendon>
+
+<actuator>
+    <!-- Optional inverse kinematics actuators (can be toggled) -->
+    <!-- ik start -->
+    <position name="target_x_motor"     joint="target_x"     ctrlrange="0 1"     kp="100"/>
+    <position name="target_y_motor"     joint="target_y"     ctrlrange="0 1"     kp="100"/>
+    <position name="target_z_motor"     joint="target_z"     ctrlrange="-.5 .5"  kp="100"/>
+    <position name="target_roll_motor"  joint="target_roll"  ctrlrange="-3.2 3.2" kp="1"/>
+    <position name="target_pitch_motor" joint="target_pitch" ctrlrange="-3.2 3.2" kp="1"/>
+    <position name="target_yaw_motor"   joint="target_yaw"   ctrlrange="-3.2 3.2" kp="1"/>
+
+    <position name="elbow_target_x" joint="elbow_target_x" ctrlrange="-1 1" kp="10"/>
+    <position name="elbow_target_y" joint="elbow_target_y" ctrlrange="-1 1" kp="10"/>
+    <position name="elbow_target_z" joint="elbow_target_z" ctrlrange="-1 1" kp="10"/>
+    <!-- ik end -->
+
+    <!-- Optional forward kinematics tendon actuators (can be toggled) -->
+    <!-- fk start >
+    <position name="motor_base_z" joint="arm_z_joint" ctrlrange="-3.14 3.14" kp="20"/>
+    <position name="motor_sh_x" tendon="tendon_x_1" ctrlrange="0.011 0.081" kp="1000"/>
+    <position name="motor_sh_y" tendon="tendon_y_1" ctrlrange="0.011 0.081" kp="1000"/> 
+    <position name="motor_eb1_x" tendon="tendon_x_2" ctrlrange="0.129 0.269" kp="500"/>
+    <position name="motor_eb1_y" tendon="tendon_y_2" ctrlrange="0.129 0.269" kp="500"/> 
+    <position name="motor_eb2_x" tendon="tendon_x_3" ctrlrange="0.171 0.381" kp="1000"/>
+    <position name="motor_eb2_y" tendon="tendon_y_3" ctrlrange="0.171 0.381" kp="1000"/>  
+    <position name="motor_wr_x" tendon="tendon_x_4" ctrlrange="0.279 0.579" kp="1000"/>
+    <position name="motor_wr_y" tendon="tendon_y_4" ctrlrange="0.279 0.579" kp="1000"/>
+    <! fk end -->
+
+    <!-- Gripper actuator (always available) -->
+    <position name="motor_gripper" joint="gripper" ctrlrange="-3.2 3.2" kp="0.1"/>
+</actuator>
+
+</mujoco>
+
+

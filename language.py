@@ -1,46 +1,31 @@
-from openai import OpenAI
 import re
-import os
-import json
+import config
+from openai import OpenAI
 
-#load language from config file
-config_file_path = ("config.json")
-with open(config_file_path, 'r') as config_file:
-    config = json.load(config_file)
-lang = config.get('lang', '')
+system_prompt = config.system_prompt
 
-
-# Pfad zur System-Prompt-Datei
-system_prompt_path = os.path.join(os.path.dirname(__file__), 'system_prompt.txt')
-# Laden des System-Prompts aus der Textdatei
-with open(system_prompt_path, 'r', encoding='utf-8') as file:
-    system_prompt = file.read()
-#replage $lang$ with the language
-system_prompt = system_prompt.replace("$lang$", lang)
-
-
-#function to remove incomplete sentences
+# Funktion zum Entfernen unvollständiger Sätze
 def remove_incomplete_sentences(text):
-    #if the text is empty its ok
+    # Wenn der Text leer ist, ist das in Ordnung
     if text == "":
         return text
-    # Split the text into sentences
+    # Text in Sätze aufteilen
     sentences = re.split('(?<=[.!?]) +', text)
 
-    # Check if the last sentence ends with a punctuation mark
-    if sentences and not re.search('[.!?:;]$', sentences[-1]):
-        #print the last sentence that will be removed
-        print("Removed incomplete sentence: ", sentences[-1])
-        # Remove the last sentence
-        sentences = sentences[:-1]
+    # Überprüfen, ob der letzte Satz mit einem Satzzeichen endet
+    if sentences and not re.search('[.!?]$', sentences[-1]):
+        # Überprüfen, ob der letzte Satz nur aus einem Wort und einem `#` besteht
+        if not re.match(r'^\w+#$', sentences[-1]):
+            # Den letzten Satz entfernen
+            print("Removed incomplete sentence: ", sentences[-1])
+            sentences = sentences[:-1]
 
-    # Join the sentences back into a text
+    # Sätze wieder zu einem Text zusammenfügen
     text = ' '.join(sentences)
 
     return text
 
-
-# Initialize the conversation history
+# Initialisiere den Gesprächsverlauf
 history = [
     {
         "role": "system",
@@ -50,20 +35,19 @@ history = [
 
 import loadapikey
 loadapikey.api_key
-#initialize the client
+# Initialisiere den Client
 client = OpenAI(api_key=loadapikey.api_key)
 
 def generate_response(question, role="user"):
-    # Add the user's question to the history
+    # Füge die Frage des Benutzers zur Historie hinzu
     history.append({
         "role": role,
         "content": question
     })
-    #initilize the emotion
+    # Initialisiere die Emotion
     emotion = "neutral"
-    # Initialize the OpenAI client
     
-    # Generate text from the model
+    # Generiere Text aus dem Modell
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -71,59 +55,46 @@ def generate_response(question, role="user"):
             temperature=0.8,
             max_tokens=64,
         )
-        #get the answer
+        # Antwort erhalten
         answer = response.choices[0].message.content
 
-        #remove incomplete sentences. Uncomplete sentences are caused by token limit. This is the last stentence without a dot, question mark or exclamation mark.
+        # Unvollständige Sätze entfernen
         answer = remove_incomplete_sentences(answer)
     except:
-    #     error = str(sys.exc_info()[1])
-    #    #print the error
-    #    print("error: ",error)
-    #    #output the error as speeech
-    #    return "sad",error
         answer = "sad# I could not use OpenAI. Probably no internet connection."
 
-
-    # Add the assistant's message to the history
+    # Füge die Antwort des Assistenten zur Historie hinzu
     history.append({
         "role": "assistant",
         "content": answer
     })
 
-    #split the answer in text and emotion
-    #check if there is exactly one #
+    # Antwort in Text und Emotion aufteilen
     if answer.count('#') != 1:
         history.append({
-        "role": "system",
-        "content": "Error: There must be exactly one # in the answer!"
+            "role": "system",
+            "content": "Error: There must be exactly one # in the answer!"
         })
         answer_text = answer
-    else: 
+    else:
         answer_text = answer.split('#')[1]
-        #print(answer_text)
-        #get the emotion
         emotion = answer.split('#')[0]
 
     return emotion, answer_text
 
-# test the function if main
+# Teste die Funktion, wenn main
 if __name__ == "__main__":
-    # Test the function with a question. include the history with the system prompt
-    #emotion, text =generate_response("Wie heißt du?")
-    #print("Emotion: ",emotion)
-    #print("Text: ",text)
-
-    #Make a Chat
+    print("Assistant started.")
+    # Chat erstellen
     while True:
-        #get the user input
+        # Benutzereingabe erhalten
         user_input = input("User: ")
-        #generate the response
-        emotion, text =generate_response(user_input)
-        #print the response
-        print("Assistant: ",text)
-        print("Emotion: ",emotion)
-        #if the user types "exit" the loop will end
+        # Antwort generieren
+        emotion, text = generate_response(user_input)
+        # Antwort ausgeben
+        print("Assistant: ", text)
+        print("Emotion: ", emotion)
+        # Wenn der Benutzer "exit" eingibt, endet die Schleife
         if user_input == "exit":
             break
 

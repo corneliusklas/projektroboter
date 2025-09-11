@@ -1,0 +1,105 @@
+<mujoco>
+
+<default>
+    <geom density="1000"/>
+</default>
+
+<!--<option gravity="0 0 0"/>-->
+<!--<option integrator="RK4" timestep="0.0001"/>-->
+<!--<option integrator="Euler" timestep="0.01"/>-->
+
+<compiler angle="radian" meshdir="." autolimits="true"/>
+
+  <!-- import our stl files -->
+  <asset>
+      <mesh file="base0.stl" scale="0.001 0.001 0.001"/>
+      <mesh file="wristbase.stl" scale="0.001 0.001 0.001"/>
+      <mesh file="lever1.stl" scale="0.001 0.001 0.001"/>
+      <mesh file="winkel.stl" scale="0.001 0.001 0.001"/>
+      <mesh file="lever_m.stl" scale="0.001 0.001 0.001"/>
+      <mesh file="base2_met.stl" scale="0.001 0.001 0.001"/>
+      <mesh file="base2_smooth.stl" name= "base2" scale="0.001 0.001 0.001"/>
+      <mesh file="cover.stl" scale="0.001 0.001 0.001"/>
+
+      
+  </asset>
+
+
+  <worldbody>
+    <!-- set up a light pointing down on the robot -->
+    <light directional="true" pos="-0.5 0.5 3" dir="0 0 -1" />
+    <!--<geom name="red_box" type="box" size=".2 .2 .2" rgba="1 0 0 1"/> -->
+    <!--<geom name="green_sphere" pos=".2 .2 .2" size=".1" rgba="0 1 0 1"/> -->
+    <!-- add a floor so we don't stare off into the abyss -->
+    <geom name="floor" pos="0 0 -1" size="1 1 1" type="plane" rgba="1 0.83 0.61 0.5"/>
+
+    <!--rotate 90° around x quat="0.707 0 0 0.707"-->
+    <body name="base" pos="0 0 0">
+      <!-- no collision: contype="0" conaffinity="0" -->
+      <geom name="base" type="mesh" mesh="base0" rgba="1 1 1 1" contype="0" conaffinity="0"/>
+      <geom name="wristbase" type="mesh" mesh="wristbase" rgba="1 1 1 .3" contype="0" conaffinity="0"/>
+      <geom name="cover" type="mesh" mesh="cover" rgba="1 1 1 .1" contype="0" conaffinity="0"/>
+      <geom name="baseframex" type="box" size=".003" fromto="-.035 0 -.022 .035 0 -.022"  rgba="0 0 1 1"  contype="0" conaffinity="0"/>
+      <geom name="baseframey" type="box" size=".003" fromto="0 -.035 -.022 0 .035 -.022"  rgba="0 0 1 1"  contype="0" conaffinity="0"/>
+	  <!-- Define site for tendon_x_end within base2 body -->
+	  <site name="tendon_x_start" pos="0.01 0 0.00"/>
+	  <site name="tendon_y_start" pos="0 0.01 0.00"/>
+      <!--<inertial pos="0 0 0" mass="0.001" diaginertia="1 1 1"/>-->
+      <body name="xjoint1" pos="0 0 0" >
+        <geom name="xjoint1" type="box" size=".005" fromto="-.03 0 -.022 .03 0 -.022"  rgba="1 0 0 1"  contype="0" conaffinity="0"/>
+        <joint name="xjoint1" type="hinge" axis="1 0 0" damping="0.05" pos="0 0 -.022"/>
+
+          <body name="yjoint1" pos="0 0 0">
+            <geom name="connector" type="box" size=".003" fromto="0 0  -.022 0 0 .022"  rgba=".5 .5 .5 1"  contype="0" conaffinity="0"/>
+            <geom name="yjoint1" type="box" size=".006" fromto="0 0.02  -.022 0 -0.02 -.022"  rgba="0 1 0 1"  contype="0" conaffinity="0"/>
+            <joint name="yjoint1" type="hinge" axis="0 1 0" damping="0.05" pos="0 0 -.022"/>
+            <geom name="yjoint2" type="box" size=".006" fromto="0 0.02  .022 0 -0.02 .022"  rgba="0 1 0 1"  contype="0" conaffinity="0"/>
+
+            <body name="yjoint2" pos="0 0 0">
+              <joint name="yjoint2" type="hinge" axis="0 1 0" damping="0.05" pos="0 0 .022"/>
+              <geom name="xjoint2" type="box" size=".005" fromto="-.03 0 .022 .03 0 .022"  rgba="1 0 0 1"  contype="0" conaffinity="0" />
+              <body name="base2" pos="0 0 0">
+                
+                <joint name="xjoint2" type="hinge" axis="1 0 0" damping="0.05" pos="0 0 .022"/>
+                <!-- no collision: contype="0" conaffinity="0" -->
+                <geom name="base2" type="mesh" mesh="base2" rgba="1 1 1 .3" contype="0" conaffinity="0"/>
+                <geom name="endframex" type="box" size=".003" fromto="-.035 0 .022 .035 0 .022"  rgba="0 0 1 1"  contype="0" conaffinity="0"/>
+                <geom name="endframey" type="box" size=".003" fromto="0 -.035 .022 0 .035 .022"  rgba="0 0 1 1"  contype="0" conaffinity="0"/>
+				<!-- Define site for tendon_x_end within base2 body -->
+				<site name="tendon_x_end" pos="0.01 0 0.04"/>
+				<site name="tendon_y_end" pos="0 0.01 0.04"/>
+              </body>
+            </body>
+          </body>
+      </body>
+
+
+    
+    </body>
+
+
+    
+
+  </worldbody>
+
+  <!-- add constrains to make joint axis move together -->
+  <equality>
+    <joint joint1="xjoint1" joint2="xjoint2" polycoef="0 1 0 0 0" solref="0.002 1" solimp="0.8 0.8 0.01"/>
+    <joint joint1="yjoint1" joint2="yjoint2" polycoef="0 1 0 0 0" solref="0.002 1" solimp="0.8 0.8 0.01"/>
+    <!-- https://mujoco.readthedocs.io/en/latest/modeling.html -->
+
+
+  </equality> 
+
+
+
+
+
+  <actuator>
+    <position name="motorX" joint="xjoint1" ctrlrange="-1 1" kp="100"/>
+    <position name="motorY" joint="yjoint1" ctrlrange="-1 1" kp="100"/>
+
+  </actuator>
+
+</mujoco>
+

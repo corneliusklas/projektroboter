@@ -1,0 +1,72 @@
+import time
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from collections import deque
+from pypot.dynamixel import DxlIO
+
+# === KONFIGURATION ===
+port = 'COM17'             # Dein USB-Port
+baudrate = 1000000
+motor_id = 4               # Dynamixel ID
+alpha = 3                # Reibungskompensation – je höher, desto "leichter"
+smoothing = .5            # Glättung der Bewegung (0.1–0.3 empfohlen)
+torque_limit = 15         # Begrenze die Motorleistung
+refresh_rate = 0.002        # Zeit zwischen Zyklen (in Sekunden)
+
+history_len = 200          # Punkte im Plot anzeigen
+
+# === INITIALISIERUNG ===
+dxl_io = DxlIO(port, baudrate=baudrate)
+dxl_io.enable_torque([motor_id])
+dxl_io.set_torque_limit({motor_id: torque_limit})
+print(f"Motor {motor_id} verbunden auf {port} mit Torque-Limit {torque_limit}.")
+
+# Startwerte
+last_pos = dxl_io.get_present_position([motor_id])[0]
+last_filtered_delta = 0.0
+
+# === PLOTDATEN VORBEREITEN ===
+torque_data = deque([0]*history_len, maxlen=history_len)
+fig, ax = plt.subplots()
+line, = ax.plot([], [], lw=2)
+ax.set_ylim(-102, 102)
+ax.set_xlim(0, history_len)
+ax.set_title("Live Torque (Reibungskompensation aktiv)")
+ax.set_ylabel("Torque")
+ax.set_xlabel("Letzte Messpunkte")
+
+# === ANIMATIONS-FUNKTION ===
+def update(frame):
+    global last_pos, last_filtered_delta
+
+    # Aktuelle Position & Load lesen
+    pos = dxl_io.get_present_position([motor_id])[0]
+    load = dxl_io.get_present_load([motor_id])[0]
+
+    # Delta berechnen
+    delta = pos - last_pos
+
+    # Bewegung glätten
+    filtered_delta = smoothing * delta + (1 - smoothing) * last_filtered_delta
+
+    # Reibungskompensation
+    goal = pos + alpha * filtered_delta
+    dxl_io.set_goal_position({motor_id: goal})
+
+    # Update für nächsten Durchlauf
+    last_filtered_delta = filtered_delta
+    last_pos = pos
+
+    # Plot aktualisieren
+    torque_data.append(load)
+    line.set_data(range(len(torque_data)), torque_data)
+    return line,
+
+# === ANIMATION STARTEN ===
+ani = animation.FuncAnimation(fig, update, blit=True, interval=refresh_rate*1000)
+plt.tight_layout()
+plt.show()
+
+# === CLEANUP ===
+dxl_io.disable_torque([motor_id])
+dxl_io.close()

@@ -2,10 +2,28 @@ import pygame
 import threading
 import time
 import math
-import bluetooth_face  # Import für den realen Roboterkopf
 
-BLUETOOTH=True
+
+import config
+
+CONNECTION=config.connection
+print("Connection type:", CONNECTION)
+
+
+if CONNECTION == "bluetooth":
+    print("Bluetooth is enabled")
+    import robotface_bluetooth as face  # Import für den realen Roboterkopf
+elif CONNECTION == "wlan":
+    print("WLAN is enabled")
+    import robotface_wlan as face  # Import für den realen Roboterkopf
+else:
+    print("No connection to robot head")
+
+
+
 running = True  # Globale Laufvariable für die GUI
+
+#connected status is set in init()
 connected=False
 
 # Initialisiere die Variablen am Anfang
@@ -24,6 +42,7 @@ EYEBROW_OFFSET_Y = 0.1  # Abstand der Augenbrauen über den Augen
 
 # Variable für relative Augenposition (links/rechts)
 e = 0.5  # 0 = ganz links, 1 = ganz rechts, 0.5 = Mitte
+v = 0.5  # 0 = ganz oben, 1 = ganz unten, 0.5 = Mitte
 
 # Variablen für Lippenbögen, Augenlider und Augenbrauendrehung
 l = 0  # Augenlider (0 = geschlossen, 1 = geöffnet)
@@ -45,7 +64,7 @@ talking = False
 talk_time = 0  # Zeit in Sekunden, die das Reden andauert
 last_question = "test"
 answer_text = "test"
-base_image = None
+#base_image = None
 last_update_time = None
 last_emotion = None  # Zum Verfolgen der letzten Emotion
 
@@ -56,6 +75,7 @@ last_state = {
     "w": w,
     "b": b,
     "e": e,
+    "v": v,
     "r": r,
     "led_yellow": led_yellow,
     "led_red_green_inverted": led_red_green_inverted
@@ -63,18 +83,20 @@ last_state = {
 
 # Initialisierung der Anzeige
 def init():
-    global screen, base_image
+    global screen
     pygame.init()
     pygame.mixer.init()
     screen = pygame.display.set_mode((sizex, sizey))
     pygame.display.set_caption("Robot Head")
-    base_image = pygame.image.load("face/base.png")
-    base_image = pygame.transform.scale(base_image, (sizex, sizey))
+    #base_image = pygame.image.load("face/base.png")
+    #base_image = pygame.transform.scale(base_image, (sizex, sizey))
 
-    if BLUETOOTH:
+    if CONNECTION == "bluetooth" or CONNECTION == "wlan":
         global connected
-        connected=bluetooth_face.init()
+        connected=face.init()
         move("l", 1)
+    else:
+        print("Keine Verbindung zum Roboterkopf")
 
 
 
@@ -84,45 +106,51 @@ def sync_with_real_robot():
 
     # Überprüfen, ob sich eine Variable geändert hat und nur diese senden
     if l != last_state["l"]:
-        bluetooth_face.move("l", l)
+        face.move("l", l)
         last_state["l"] = l
 
     if u != last_state["u"]:
-        bluetooth_face.move("u", u)
+        face.move("u", u)
         last_state["u"] = u
 
     if w != last_state["w"]:
-        bluetooth_face.move("w", w)
+        face.move("w", w)
         last_state["w"] = w
 
     if b != last_state["b"]:
-        bluetooth_face.move("b", b)
+        face.move("b", b)
         last_state["b"] = b
 
     if e != last_state["e"]:
-        bluetooth_face.move("e", e)
+        face.move("e", e)
         last_state["e"] = e
 
+    if v != last_state["v"]:
+        face.move("v", v)
+        last_state["v"] = v
+
     if r != last_state["r"]:
-        bluetooth_face.move("r", r)  # Skalierung zwischen 0 und 1
+        face.move("r", r)  # Skalierung zwischen 0 und 1
         #print("r",r)    
         last_state["r"] = r
 
     if led_yellow != last_state["led_yellow"]:
-        bluetooth_face.move("y", 1 if led_yellow else 0)
+        face.move("y", 1 if led_yellow else 0)
         last_state["led_yellow"] = led_yellow
 
     if led_red_green_inverted != last_state["led_red_green_inverted"]:
-        bluetooth_face.move("g", 1 if not led_red_green_inverted else 0)
+        face.move("g", 1 if not led_red_green_inverted else 0)
         last_state["led_red_green_inverted"] = led_red_green_inverted
 
 
 # Funktion zur Verarbeitung von Bewegungen (wie beim physischen Roboterkopf)
 def move(key, position):
-    global l, u, w, b, r, led_yellow, led_red_green_inverted, e
+    global l, u, w, b, r, led_yellow, led_red_green_inverted, e, v
 
     if key == "e":  # Augenposition
         e = position  # e zwischen 0 und 1
+    elif key == "v":  # Augenposition oben/unten
+        v = position  # v zwischen 0 und 1
     elif key == "l":  # Augenlider
         l = position
     elif key == "u":  # Oberlippe
@@ -205,11 +233,11 @@ def process_inputs():
 
     # Unterlippenbewegung
     if pressed[pygame.K_t]:
-        move("w", min(1, w + 0.1))  # Unterlippe nach unten
+        move("w", min(1, w + 0.1))  # Unterlippe nach oben
     elif pressed[pygame.K_z]:
-        move("w", max(0, w - 0.1))  # Unterlippe nach oben
+        move("w", max(0, w - 0.1))  # Unterlippe nach unten
 
-    # Augenbrauendrehung
+    # Augenbrauendrehung/Antennen
     if pressed[pygame.K_s]:
         move("b", min(1, b + 0.1))  # Augenbrauen nach außen drehen
     elif pressed[pygame.K_d]:
@@ -220,6 +248,12 @@ def process_inputs():
         move("e", max(0, e - 0.1))  # Augen nach links
     elif pressed[pygame.K_RIGHT]:
         move("e", min(1, e + 0.1))  # Augen nach rechts
+
+    # Augen vertikal bewegen
+    if pressed[pygame.K_UP]:
+        move("v", max(0, v - 0.1))  # Augen nach oben
+    elif pressed[pygame.K_DOWN]:
+        move("v", min(1, v + 0.1))  # Augen nach unten
 
     # LEDs steuern
     if pressed[pygame.K_f]:
@@ -262,28 +296,38 @@ def update_positions_based_on_emotion_and_talking(emotion):
         print(f"Emotion geändert zu: {emotion}")
         # Emotion einmalig die Werte setzen
         if emotion == "happy":
-            move("b", 1)  # Augenbrauen in A form
+            move("b", 0.5)  # Augenbrauen neutral
             move("u", 0.1) # lachen
             move("w", 0.1)
             move("l", 1)
+            move("v", 0.5)  # Augen in der Mitte
         elif emotion == "angry":
             move("b", 0)  # Augenbrauen in V Form
             move("u", .9) # mund etwas offen und nach unten
             move("w", .8)
             # augen zugekniffen
             move("l", 0.3)
+            move("v", 0.3)  # Augen in der Mitte
         elif emotion == "sad":
             move("b", .9)  # Augenbrauen in a form
             move("u", .9)
             move("w", .9)
             move("l", 0.5)
+            # Augen leicht nach unten
+            move("v", 0.7)
         elif emotion == "neutral":
             move("b", 0.5)  # Augenbrauen horizontal
             move("u", 0.5)
             move("w", 0.5)
             move("l", 1)
+            move("v", 0.5)
         elif emotion == "sleepy":
+            move("l", 0.2)
+        elif emotion == "sleeping":
             move("l", 0)
+            # look to the top - stop eyes moving (why?)
+            move("v", 0)
+
         elif emotion == "neck0":
             move("r", 0)
         elif emotion == "neck1":
@@ -355,8 +399,8 @@ def update_positions_based_on_emotion_and_talking(emotion):
 def draw_mouth(u, w):
     global screen, sizex, sizey
 
-    mouth_width = 0.2 * sizex  # Gesamte Breite des Mundes
-    mouth_height = 0.05 * sizey  # Maximale Höhe der Krümmung
+    mouth_width = 0.4 * sizex  # Gesamte Breite des Mundes
+    mouth_height = 0.09 * sizey  # Maximale Höhe der Krümmung
     center_x = sizex / 2  # Mittelpunkt des Mundes in X-Richtung
     center_y = sizey * 0.7  # Y-Position des Mundes
     lip_offset = 0.01 * sizey  # Mindestabstand der Unterlippe zur Oberlippe
@@ -431,16 +475,18 @@ def draw_compass():
 
 # Funktion zum Zeichnen des Gesichts basierend auf Positionen
 def draw_face():
-    global screen, sizex, sizey, base_image, l, u, w, e
+    global screen, sizex, sizey, l, u, w, e
 
     # Hintergrundbild zeichnen
-    screen.blit(base_image, (0, 0))
+    #screen.blit(base_image, (0, 0))
+    #Weißen Hintergrund zeichnen
+    screen.fill((255, 255, 255))
 
     # Augen zeichnen
     pygame.draw.circle(screen, (0, 0, 0),
-                       ((LEFT_EYE_X + (e - 0.5) * 0.1) * sizex, EYE_Y * sizey), 0.01 * sizex)
+                       (int(LEFT_EYE_X * sizex + (e - 0.5) * 0.1 * sizex), int(EYE_Y * sizey + (v - 0.5) * 0.1 * sizey)), int(0.01 * sizex))
     pygame.draw.circle(screen, (0, 0, 0),
-                       ((RIGHT_EYE_X + (e - 0.5) * 0.1) * sizex, EYE_Y * sizey), 0.01 * sizex)
+                       (int(RIGHT_EYE_X * sizex + (e - 0.5) * 0.1 * sizex), int(EYE_Y * sizey + (v - 0.5) * 0.1 * sizey)), int(0.01 * sizex))
 
     # Variablen für maximale Breite und Höhe der Augenlider
     lid_max_width = 0.1 * sizex  # Maximale Breite der Augenlider
@@ -450,32 +496,51 @@ def draw_face():
     lid_height = (1 - l) * lid_max_height  # Augenlid-Höhe basierend auf l
 
     # Oberes Augenlid
-    pygame.draw.rect(screen, (200, 200, 200), (
-        (LEFT_EYE_X + (e - 0.5) * 0.1) * sizex - lid_max_width / 2,
+    upper_lid_rect_left = pygame.Rect(
+        LEFT_EYE_X * sizex - lid_max_width / 2,
         EYE_Y * sizey - lid_max_height / 2,
         lid_max_width,
         lid_height / 2
-    ))
-    pygame.draw.rect(screen, (200, 200, 200), (
-        (RIGHT_EYE_X + (e - 0.5) * 0.1) * sizex - lid_max_width / 2,
+    )
+    upper_lid_rect_right = pygame.Rect(
+        RIGHT_EYE_X * sizex - lid_max_width / 2,
         EYE_Y * sizey - lid_max_height / 2,
         lid_max_width,
         lid_height / 2
-    ))
+    )
 
     # Unteres Augenlid
-    pygame.draw.rect(screen, (200, 200, 200), (
-        (LEFT_EYE_X + (e - 0.5) * 0.1) * sizex - lid_max_width / 2,
+    lower_lid_rect_left = pygame.Rect(
+        LEFT_EYE_X * sizex - lid_max_width / 2,
         EYE_Y * sizey + lid_max_height / 2 - lid_height / 2,
         lid_max_width,
         lid_height / 2
-    ))
-    pygame.draw.rect(screen, (200, 200, 200), (
-        (RIGHT_EYE_X + (e - 0.5) * 0.1) * sizex - lid_max_width / 2,
+    )
+    lower_lid_rect_right = pygame.Rect(
+        RIGHT_EYE_X * sizex - lid_max_width / 2,
         EYE_Y * sizey + lid_max_height / 2 - lid_height / 2,
         lid_max_width,
         lid_height / 2
-    ))
+    )
+
+    # Zeichne die Augenlider mit einem schwarzen Rahmen
+    
+    pygame.draw.rect(screen, (200, 200, 200), upper_lid_rect_left)  # Augenlid
+    pygame.draw.rect(screen, (200, 200, 200), upper_lid_rect_right)  # Augenlid
+    pygame.draw.rect(screen, (200, 200, 200), lower_lid_rect_left)  # Augenlid
+    pygame.draw.rect(screen, (200, 200, 200), lower_lid_rect_right)  # Augenlid
+
+    pygame.draw.rect(screen, (100, 100, 100), upper_lid_rect_right, 2)  # Schwarzer Rahmen
+    pygame.draw.rect(screen, (100, 100, 100), lower_lid_rect_left, 2)  # Schwarzer Rahmen
+    pygame.draw.rect(screen, (100, 100, 100), lower_lid_rect_right, 2)  # Schwarzer Rahmen
+    pygame.draw.rect(screen, (100, 100, 100), upper_lid_rect_left, 2)  # Schwarzer Rahmen
+
+    # Zeichne den größeren Rahmen um beide Augenlider
+    eye_left = upper_lid_rect_left.union(lower_lid_rect_left)
+    eye_right = upper_lid_rect_right.union(lower_lid_rect_right)
+    pygame.draw.rect(screen, (0, 0, 0), eye_left, 2)  # Schwarzer Rahmen ums Auge
+    pygame.draw.rect(screen, (0, 0, 0), eye_right, 2)  # Schwarzer Rahmen ums Auge
+
 
     # Augenbrauen zeichnen
     draw_eyebrows()
@@ -629,7 +694,7 @@ def run_gui():
                 break
             draw_face()
             update_positions_based_on_emotion_and_talking(emotion)
-            if BLUETOOTH:
+            if connected:
                 sync_with_real_robot()
             time.sleep(0.01)
 

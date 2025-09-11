@@ -1,4 +1,5 @@
 import subprocess
+import threading
 import os
 import pyttsx3
 import pygame
@@ -44,7 +45,7 @@ def say(text,lang="de", speed=175, pitch=50):
     if engine_type == "espeak":
         return say_with_espeak(text, lang, speed, pitch)
     elif engine_type == "native":
-        return say_with_native(text, speed,voice_index=0, lang=lang, pitch=pitch)
+        return say_with_native(text, speed,voice_index=0)
     elif engine_type == "openai":
         return say_with_openai(text)
     else:
@@ -105,7 +106,7 @@ def say_with_native(text, speed=175, voice_index=0):
     if engine is None:  # Nur einmal initialisieren
         engine = pyttsx3.init()
     voices = engine.getProperty('voices')
-    print("Verfügbare Stimmen:")
+    #print("Verfügbare Stimmen:")
     for i, voice in enumerate(voices):
         print(f"{i}: {voice.id}")
 
@@ -146,8 +147,19 @@ def play_audio_pygame(file_path):
     sound = pygame.mixer.Sound(file_path)
     duration = sound.get_length()  # Gibt die Dauer in Sekunden zurück
     
-    # Abspielen
-    pygame.mixer.music.play()
+
+        # Abspielen im Hintergrund-Thread
+    def play_music():
+        pygame.mixer.music.play()
+        # Warte, bis die Wiedergabe beendet ist
+        while pygame.mixer.music.get_busy():
+            pygame.time.Clock().tick(10)
+
+        pygame.mixer.music.stop()
+        pygame.mixer.music.unload()
+
+    thread = threading.Thread(target=play_music, daemon=True)
+    thread.start()
 
     return duration
 
@@ -155,10 +167,11 @@ def play_audio_pygame(file_path):
 import numpy as np
 import scipy.io.wavfile as wav
 
-def apply_ring_modulation(input_file, output_file, frequency=80, depth=.5): #400, 0,5
+def apply_ring_modulation(input_file, output_file, frequency=80, depth=.5):
     """
     Wendet einen Ringmodulationseffekt auf eine WAV-Datei an.
     Anwendung von Ringmodulation nach Vorschlag von: https://spectrum.ieee.org/audio-deepfake-fix?utm_source=tldrai
+    "some standard frequency (say, between 30-80 Hz) and of a minimum amplitude (say, 20 percent)"
     
     Args:
         input_file (str): Pfad zur Eingangsdatei (WAV).
@@ -232,10 +245,12 @@ def say_with_openai(text, voice="fable", model="tts-1"): #alloy, ash, coral, ech
         duration = play_audio_pygame(modulated_file)
         print(f"Dauer: {duration} Sekunden")
 
+
+
         return duration
     except Exception as e:
         print(f"Fehler bei der OpenAI-TTS-Anfrage: {e}")
-        return None
+        return 0 # Fehlerfall
 
 if __name__ == "__main__":
 
@@ -246,5 +261,8 @@ if __name__ == "__main__":
     #apply_ring_modulation("output.wav", "output_modulated.wav", frequency=80, depth=1)
     #test play_audio_pygame
     #duration = play_audio_pygame("output_modulated.wav")
+    pygame.time.wait(int(duration*1000))
+
+    duration = say("Hallo, ich bin ein Roboter! 43.")
     pygame.time.wait(int(duration*1000))
     

@@ -1,0 +1,15 @@
+<mujoco>
+  <worldbody>
+    <site name="slidersite" pos="0 -.1 0" zaxis="0 1 0" size=".012" rgba="1 0 0 1"/>
+    <body>
+      <joint damping=".1"/>
+      <geom type="capsule" size=".01" fromto="0 0 0 .2 0 0"/>
+      <site name="cranksite" pos=".1 0 0" size=".012" rgba="1 0 0 1"/>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <position name="slider-crank" cranksite="cranksite" slidersite="slidersite" cranklength=".11" 
+      ctrllimited="true" ctrlrange="-.1 .1" kp="3"/>
+  </actuator>
+</mujoco>

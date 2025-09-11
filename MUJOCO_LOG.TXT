@@ -1,0 +1,6 @@
+Mon Jul 28 09:59:52 2025
+WARNING: Inertia matrix is too close to singular at DOF 24. Check model. Time = 915.1900.
+
+Mon Jul 28 09:59:52 2025
+WARNING: Nan, Inf or huge value in QACC at DOF 24. The simulation is unstable. Time = 915.1900.
+
