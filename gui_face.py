@@ -47,7 +47,7 @@ v = 0.5  # 0 = ganz oben, 1 = ganz unten, 0.5 = Mitte
 # Variablen für Lippenbögen, Augenlider und Augenbrauendrehung
 l = 0  # Augenlider (0 = geschlossen, 1 = geöffnet)
 u = 0.5  # Oberlippenbogen (0 = nach unten, 1 = nach oben)
-w = 0.5  # Unterlippenbogen (0 = nach oben, 1 = nach unten)
+w = 0.5  # Unterlippenbogen (0 = nach unten, 1 = nach oben)
 b = 0  # Augenbrauendrehung (0 = nach innen, 1 = nach außen)
 
 # LED-Zustände
@@ -146,6 +146,9 @@ def sync_with_real_robot():
 # Funktion zur Verarbeitung von Bewegungen (wie beim physischen Roboterkopf)
 def move(key, position):
     global l, u, w, b, r, led_yellow, led_red_green_inverted, e, v
+    # If position is None, do not change state (defensive)
+    if position is None:
+        return
 
     if key == "e":  # Augenposition
         e = position  # e zwischen 0 und 1
@@ -204,12 +207,15 @@ def process_inputs():
         emotion = "sleepy"
         print("Emotion gesetzt auf: sleepy")
     elif pressed[pygame.K_6]:
+        emotion = "sleeping"
+        print("Emotion gesetzt auf: sleeping")
+    elif pressed[pygame.K_8]:
         emotion = "neck0"
         print("Emotion gesetzt auf: neck0")
-    elif pressed[pygame.K_7]:
+    elif pressed[pygame.K_9]:
         emotion = "neck1"
         print("Emotion gesetzt auf: neck1")
-    elif pressed[pygame.K_8]:
+    elif pressed[pygame.K_0]:
         emotion = "neck0.5"
         print("Emotion gesetzt auf: neck0.5")
 
@@ -276,11 +282,21 @@ def process_inputs():
 # Funktion zur Ereignisverarbeitung
 def handle_events():
     global running
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False  # Setze den globalen Laufstatus auf False
-            return False
-    return True
+    # If pygame hasn't been initialized yet, don't stop the main loop — let caller wait
+    if not pygame.get_init():
+        return True
+
+    try:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False  # Setze den globalen Laufstatus auf False
+                return False
+        return True
+    except pygame.error as e:
+        # Video system might have been quit from another thread; stop handling events
+        print(f"handle_events: pygame.error during event.get(): {e}")
+        running = False
+        return False
 
 # Funktion zur Aktualisierung der Positionen basierend auf der Emotion und dem Reden
 def update_positions_based_on_emotion_and_talking(emotion):
@@ -296,13 +312,13 @@ def update_positions_based_on_emotion_and_talking(emotion):
         print(f"Emotion geändert zu: {emotion}")
         # Emotion einmalig die Werte setzen
         if emotion == "happy":
-            move("b", 0.5)  # Augenbrauen neutral
+            move("b", 0.5)  # Antennen neutral
             move("u", 0.1) # lachen
             move("w", 0.1)
-            move("l", 1)
+            move("l", 0.8)
             move("v", 0.5)  # Augen in der Mitte
         elif emotion == "angry":
-            move("b", 0)  # Augenbrauen in V Form
+            move("b", 0)  # antennen nach innen
             move("u", .9) # mund etwas offen und nach unten
             move("w", .8)
             # augen zugekniffen
@@ -316,18 +332,22 @@ def update_positions_based_on_emotion_and_talking(emotion):
             # Augen leicht nach unten
             move("v", 0.7)
         elif emotion == "neutral":
-            move("b", 0.5)  # Augenbrauen horizontal
+            move("b", 0.5)  # Antennen neutral
             move("u", 0.5)
             move("w", 0.5)
-            move("l", 1)
+            move("l", 0.8)
             move("v", 0.5)
         elif emotion == "sleepy":
             move("l", 0.2)
+        elif emotion == "attention":
+            move("l", 1)
+            move("u", 0.5)
+            move("w", 0.5)
+            move("b", 0.5)
         elif emotion == "sleeping":
             move("l", 0)
             # look to the top - stop eyes moving (why?)
             move("v", 0)
-
         elif emotion == "neck0":
             move("r", 0)
         elif emotion == "neck1":
@@ -337,8 +357,6 @@ def update_positions_based_on_emotion_and_talking(emotion):
 
         #wenn gerade geredet wird: passe auch startwerte an
         if talking:
-            #if 'start_u' in globals():
-                #global start_u, start_w
             start_u = u
             start_w = w
 
@@ -371,8 +389,8 @@ def update_positions_based_on_emotion_and_talking(emotion):
             time_fraction = (talk_time % (1 / speed)) * speed  # Normierte Zeit innerhalb eines Bewegungszyklus
 
             # Berechne die neue Position für Ober- und Unterlippe
-            new_u = start_u + amplitude * math.sin(2 * math.pi * time_fraction) + amplitude/2
-            new_w = start_w - amplitude * math.sin(2 * math.pi * time_fraction) - amplitude/2
+            new_u = start_u + amplitude * (math.sin(2 * math.pi * time_fraction) + 1)
+            new_w = start_w - amplitude * (math.sin(2 * math.pi * time_fraction) + 1)
 
             move("u", new_u)  # Aktualisiere die Oberlippenposition
             move("w", new_w)  # Aktualisiere die Unterlippenposition
@@ -423,9 +441,9 @@ def draw_mouth(u, w):
     #lower_right = (lower_right[0], max(lower_right[1], min_y_upper + lip_offset))
 
     # Oberlippe zeichnen (3 Segmente)
-    pygame.draw.line(screen, (100, 100, 100), left_corner, upper_left, 2)
-    pygame.draw.line(screen, (100, 100, 100), upper_left, upper_right, 2)
-    pygame.draw.line(screen, (100, 100, 100), upper_right, right_corner, 2)
+    pygame.draw.line(screen, (200, 100, 100), left_corner, upper_left, 2)
+    pygame.draw.line(screen, (200, 100, 100), upper_left, upper_right, 2)
+    pygame.draw.line(screen, (200, 100, 100), upper_right, right_corner, 2)
 
     # Unterlippe zeichnen (3 Segmente)
     pygame.draw.line(screen, (0, 0, 0), left_corner, lower_left, 2)
@@ -688,24 +706,31 @@ def run_gui():
     #neck= play_sequence(sequenceneck, loop=True)
 
     try:
-
         while running:
-            if not handle_events():
-                break
-            draw_face()
-            update_positions_based_on_emotion_and_talking(emotion)
-            if connected:
-                sync_with_real_robot()
-            time.sleep(0.01)
+            try:
+                if not handle_events():
+                    break
+                draw_face()
+                update_positions_based_on_emotion_and_talking(emotion)
+                if connected:
+                    sync_with_real_robot()
+                time.sleep(0.1)  # Sleep for slower animation command rate
+            except Exception as inner_e:
+                # Log and continue; avoid killing the thread silently
+                print(f"run_gui: exception in GUI loop: {inner_e}")
+                # small sleep to avoid busy loop on continuous exceptions
+                time.sleep(0.1)
 
     finally:
         # Sicherstellen, dass die GUI beendet wird
         running = False  # Beende die Schleife sicher
-        pygame.quit()  # Pygame sauber beenden
+        # Only quit pygame if it was initialized
+        try:
+            if pygame.get_init():
+                pygame.quit()  # Pygame sauber beenden
+        except Exception as e:
+            print(f"run_gui: error during pygame.quit(): {e}")
     
-
-
-
 
 # Hauptprogramm bei standalone-Ausführung
 def standalone_main():
@@ -715,10 +740,15 @@ def standalone_main():
     gui_thread = threading.Thread(target=run_gui, daemon=True)
     gui_thread.start()
 
+    #send filter value of 0.5 to robot by sending f 0.5
+    if connected:
+        face.move("f", 0.95)
+
+
     try:
         while running:
             process_inputs()
-            time.sleep(0.01)
+            time.sleep(0.01) 
     finally:
         running = False  # Beende sicher die Schleifen
         gui_thread.join()  # Warte auf den GUI-Thread, bevor das Programm endet

@@ -216,6 +216,11 @@ def say_with_openai(text, voice="fable", model="tts-1"): #alloy, ash, coral, ech
     Returns:
         float: Die tatsaechliche Laenge der generierten Audiodatei in Sekunden oder None, falls ein Fehler auftritt.
     """
+    # Guard against empty input which causes API errors
+    if text is None or str(text).strip() == "":
+        print("say_with_openai: empty text provided, skipping TTS request")
+        return 0
+
     try:
         response = openai.audio.speech.create(
             model=model,

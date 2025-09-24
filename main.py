@@ -30,12 +30,7 @@ emotion = "neutral"
 hearing.question = config.first_message
 
 
-
-
-
-
 ####functions####
-
 
 
 #gui.init() is done in its own threat
@@ -87,6 +82,11 @@ try:
 
 finally: #clean up
     print("Beende das Programm...")
+    #setze emotion auf #sleeping
+    gui_face.emotion="sleeping"
+    #warte 1 sekunde
+    time.sleep(1)
+
     gui_face.running = False  # Beende die GUI-Schleife sicher
     gui_thread.join()  # Warte, bis der GUI-Thread beendet ist
     print("Programm beendet.")

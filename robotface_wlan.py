@@ -61,12 +61,12 @@ MAP: Dict[str, List[int]] = {
 
 # individuelle Kalibrierung je Servoindex (min_deg, max_deg)
 CAL: Dict[int, Tuple[int, int]] = {
-    0: (133, 68),  #  unten 0- oben 1
-    1: (75, 144),  # unten 0 - oben 1
-    2: (165, 76),  # links - rechts
-    3: (85, 40),   # oben - unten
-    4: (131, 71),  # zu - auf
-    5: (41, 143),  # hoch - runter
+    0: (135, 67),  #  unten 0- oben 1
+    1: (104, 173),  # unten 0 - oben 1
+    2: (137, 57),  # links - rechts
+    3: (89, 35),   # oben - unten
+    4: (128, 67),  # zu - auf
+    5: (77, 180),  # hoch - runter
 }
 
 # LED-Indizes wie im ESP32-Sketch
@@ -90,7 +90,7 @@ class State:
         self.ws_lock = threading.Lock()
         self.stop_evt = threading.Event()
         self._ws_started = False
-        self.queue = queue.Queue()  # Nachrichten-Warteschlange
+        self.queue = queue.Queue(maxsize=100)  # Nachrichten-Warteschlange
 
 STATE = State()
 
@@ -115,9 +115,34 @@ def pos_to_deg(idx: int, pos01: float) -> int:
 def send_ws(text: str):
     if PRINT_DEBUG:
         print("queue >>", text)
-    STATE.queue.put(text)
+    # Fallback: enqueue non-coalesced messages (best-effort).
+    # If the queue is full, remove the oldest element and insert the new one
+    # so we keep the most recent commands (drop oldest).
+    try:
+        try:
+            STATE.queue.put_nowait(text)
+        except queue.Full:
+            # Drop the oldest item to make room for the new one
+            try:
+                _ = STATE.queue.get_nowait()
+            except queue.Empty:
+                pass
+            try:
+                STATE.queue.put_nowait(text)
+            except queue.Full:
+                # If it still fails, give up
+                if PRINT_DEBUG:
+                    print("queue still full, drop:", text)
+    except Exception:
+        # any unexpected error -> drop
+        if PRINT_DEBUG:
+            print("queue put error/drop:", text)
 
 def sender_worker():
+    # Minimum interval between two sends (seconds). Tuneable to avoid flooding
+    # the ESP32. 0.02 => 50 Hz, 0.05 => 20 Hz. Use a conservative default.
+    WS_MSG_MIN_INTERVAL = 0.01
+
     while not STATE.stop_evt.is_set():
         try:
             msg = STATE.queue.get(timeout=0.1)
@@ -139,6 +164,9 @@ def sender_worker():
                 # keine Verbindung -> später nochmal probieren
                 STATE.queue.put(msg)
                 time.sleep(0.5)
+
+        # Rate limiting
+        time.sleep(WS_MSG_MIN_INTERVAL)
 
 def set_servo(idx: int, deg: int):
     deg = max(0, min(180, int(deg)))
@@ -217,16 +245,16 @@ def ws_worker():
 # ------------------ KOMPATIBILITÄT: move() ------------------
 
 def _apply_lip_collision(upper: Optional[float] = None, lower: Optional[float] = None):
-    """Sorgt dafür, dass upper_pos ≤ lower_pos bleibt."""
+    """Sorgt dafür, dass upper_pos > lower_pos bleibt."""
     #1 hoch - 0 runter
     if upper is not None:
         STATE.upper_pos = clamp(upper)
     if lower is not None:
         STATE.lower_pos = clamp(lower)
-    if STATE.lower_pos > STATE.upper_pos:
-        print("Collision:", STATE.lower_pos, " > ", STATE.upper_pos) 
-        STATE.lower_pos = STATE.upper_pos
-        print("→ set lower_pos =", STATE.lower_pos)
+    #if STATE.lower_pos > STATE.upper_pos:
+    #    print("Collision:", STATE.lower_pos, " > ", STATE.upper_pos) 
+    #    STATE.lower_pos = STATE.upper_pos
+    #    print("→ set lower_pos =", STATE.lower_pos)
     set_group("upper", STATE.upper_pos)
     set_group("lower", STATE.lower_pos)
 
