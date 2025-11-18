@@ -1,65 +1,95 @@
+import re
+import config
+import requests
+import json
 
-#--------Aya expense----------
-# from transformers import AutoTokenizer, AutoModelForCausalLM
-# from huggingface_hub import login
-# from datetime import datetime
+system_prompt = config.system_prompt
 
-# # Log in using the API token
-# login(token="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")
+# Funktion zum Entfernen unvollständiger Sätze
+def remove_incomplete_sentences(text):
+    if text == "":
+        return text
+    sentences = re.split(r'(?<=[.!?]) +', text)
+    if sentences and not re.search(r'[.!?]$', sentences[-1]):
+        if not re.match(r'^\w+#$', sentences[-1]):
+            print("Removed incomplete sentence:", sentences[-1])
+            sentences = sentences[:-1]
+    return ' '.join(sentences)
 
-# model_id = "CohereForAI/aya-expanse-8b"
-# tokenizer = AutoTokenizer.from_pretrained(model_id, local_files_only=True)
-# model = AutoModelForCausalLM.from_pretrained(model_id, local_files_only=True)
+# Gesprächsverlauf initialisieren
+history = [
+    {"role": "system", "content": system_prompt}
+]
 
-# # Generate text
-# Format the message with the chat template
-# messages = [{"role": "user", "content": "Hallo Roboter wie geht es dir?"}] #Anneme onu ne kadar sevdiğimi anlatan bir mektup yaz
-# input_ids = tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, return_tensors="pt")
+# Funktion zum Generieren einer Antwort über Ollama
+def generate_response(question, role="user"):
+    history.append({"role": role, "content": question})
 
-# #get current time
-# now = datetime.now()
-# print("start generating", now)
-# gen_tokens = model.generate(
-#     input_ids, 
-#     max_new_tokens=100, 
-#     do_sample=True, 
-#     temperature=0.3,
-# )
+    try:
+        # Anfrage an den lokalen Ollama-Server senden
+        response = requests.post(
+            "http://localhost:11434/api/chat",
+            json={
+                "model": "llama3.2:1b",  # <--- Modellname hier ggf. anpassen
+                "messages": history,
+                "options": {
+                    "temperature": 0.8,
+                    "num_predict": 32
+                },
+                "stream": False
+            }
+        )
 
-# gen_text = tokenizer.decode(gen_tokens[0], skip_special_tokens=True)
-# print(gen_text)
-# print("end generating", datetime.now())
+        response.raise_for_status()
+
+        # --- Robust: Mehrere JSON-Objekte verarbeiten ---
+        raw_text = response.text.strip()
+
+        # Mehrere JSONs trennen (Ollama kann mehrere senden)
+        json_objects = []
+        for part in raw_text.splitlines():
+            part = part.strip()
+            if part:
+                try:
+                    json_objects.append(json.loads(part))
+                except json.JSONDecodeError:
+                    print("Warnung: konnte Teil nicht als JSON lesen:", part[:80])
+
+        # Letztes gültiges JSON-Objekt enthält die finale Antwort
+        if json_objects:
+            data = json_objects[-1]
+            answer = data.get("message", {}).get("content", "").strip()
+        else:
+            answer = "sad# Ich konnte keine gültige Antwort von Ollama lesen."
+
+        # Unvollständige Sätze entfernen
+        answer = remove_incomplete_sentences(answer)
+
+    except Exception as e:
+        print("Error:", e)
+        answer = "sad# Ich konnte Ollama nicht verwenden."
+
+    # Antwort zur Historie hinzufügen
+    history.append({"role": "assistant", "content": answer})
+
+    # Emotion und Text trennen
+    if answer.count('#') != 1:
+        history.append({"role": "system", "content": "Error: There must be exactly one # in the answer!"})
+        emotion = "neutral"
+        answer_text = answer
+    else:
+        emotion, answer_text = answer.split('#', 1)
+
+    return emotion.strip(), answer_text.strip()
 
 
-#--------qwen2----------
-from transformers import AutoProcessor, AutoModelForImageTextToText
-import torch
-
-# Laden Sie den Prozessor und das Modell
-processor = AutoProcessor.from_pretrained("Qwen/Qwen2-VL-2B-Instruct")
-model = AutoModelForImageTextToText.from_pretrained("Qwen/Qwen2-VL-2B-Instruct")
-
-def generate_response(input_text):
-    # Tokenisieren Sie den Eingabetext
-    inputs = processor(text=input_text, return_tensors="pt")
-
-    # Generieren Sie Text
-    with torch.no_grad():
-        outputs = model.generate(**inputs, max_new_tokens=100, do_sample=True, temperature=0.7)
-
-    # Dekodieren Sie die generierten Token
-    generated_text = processor.batch_decode(outputs, skip_special_tokens=True)[0]
-    return generated_text
-
-def chat():
-    print("Starten Sie den Chat mit dem Roboter. Geben Sie 'exit' ein, um den Chat zu beenden.")
-    while True:
-        user_input = input("Sie: ")
-        if user_input.lower() == "exit":
-            print("Chat beendet.")
-            break
-        response = generate_response(user_input)
-        print(f"Roboter: {response}")
-
+# Hauptschleife
 if __name__ == "__main__":
-    chat()
+    print("Assistant gestartet (Ollama).")
+    while True:
+        user_input = input("User: ")
+        if user_input.lower() == "exit":
+            break
+        emotion, text = generate_response(user_input)
+        print("Assistant:", text)
+        print("Emotion:", emotion)

@@ -62,9 +62,9 @@ MAP: Dict[str, List[int]] = {
 # individuelle Kalibrierung je Servoindex (min_deg, max_deg)
 CAL: Dict[int, Tuple[int, int]] = {
     0: (135, 67),  #  unten 0- oben 1
-    1: (104, 173),  # unten 0 - oben 1
-    2: (137, 57),  # links - rechts
-    3: (89, 35),   # oben - unten
+    1: (108, 180),  # unten 0 - oben 1
+    2: (140, 57),  # links - rechts
+    3: (81, 38),   # oben - unten
     4: (128, 67),  # zu - auf
     5: (77, 180),  # hoch - runter
 }
@@ -251,10 +251,10 @@ def _apply_lip_collision(upper: Optional[float] = None, lower: Optional[float] =
         STATE.upper_pos = clamp(upper)
     if lower is not None:
         STATE.lower_pos = clamp(lower)
-    #if STATE.lower_pos > STATE.upper_pos:
-    #    print("Collision:", STATE.lower_pos, " > ", STATE.upper_pos) 
-    #    STATE.lower_pos = STATE.upper_pos
-    #    print("→ set lower_pos =", STATE.lower_pos)
+    if STATE.lower_pos > STATE.upper_pos:
+        print("Collision:", STATE.lower_pos, " > ", STATE.upper_pos) 
+        STATE.lower_pos = STATE.upper_pos
+        print("→ set lower_pos =", STATE.lower_pos)
     set_group("upper", STATE.upper_pos)
     set_group("lower", STATE.lower_pos)
 
@@ -354,15 +354,19 @@ def process_command(raw: str):
     # Lippen (mit Kollisionsschutz)
     if low == "u":
         _apply_lip_collision(upper=1.0)
+        print("upper = 1.0")
         return
     if low == "i":
         _apply_lip_collision(upper=0.0)
+        print("upper = 0.0")
         return
     if low == "o":
         _apply_lip_collision(lower=1.0)
+        print("lower = 1.0")
         return
     if low == "p":
         _apply_lip_collision(lower=0.0)
+        print("lower = 0.0")
         return
 
     # Brauen

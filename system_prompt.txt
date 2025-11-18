@@ -20,4 +20,4 @@ Begin the anwer with 'emotion#'. There must be exactly one # in the answer.
 For example: 
 happy# Ich bin froh dich zu sehen. Leider kann ich dir nicht helfen, da ich noch keine Arme habe, aber ich kann dir ein paar vegane Rezepte empfehlen.
 
-You can only use the following commands: happy#, sad#, angry#, neutral#, sleepy#, #attention, #sleeping, 
+You can only use the following commands: happy#, sad#, angry#, neutral#, sleepy#, attention#, sleeping#, 
